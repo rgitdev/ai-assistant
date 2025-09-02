@@ -9,8 +9,14 @@ export type Base64String = string;
 
 export type JsonString = string;
 
+export interface ConversationMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
 export interface IOpenAIService {
-  sendChatMessages(systemPrompt: string, message: string): Promise<JsonString>;
+  sendChatMessage(systemPrompt: string, message: string): Promise<JsonString>;
+  sendChatMessages(systemPrompt: string, messages: ConversationMessage[]): Promise<JsonString>;
   generateImage(prompt: string, model?: string): Promise<UrlString>;
   processImageFromUrl(imageUrl: UrlString, systemPrompt: string, model?: string): Promise<JsonString>;
   processImageFromBase64(imageBase64: Base64String, systemPrompt: string, model?: string): Promise<JsonString>;
@@ -36,8 +42,12 @@ export class OpenAIService implements IOpenAIService {
     this.imageService = new OpenAIImageService();
   }
 
-  async sendChatMessages(systemPrompt: string, message: string): Promise<JsonString> {
+  async sendChatMessage(systemPrompt: string, message: string): Promise<JsonString> {
     return this.chatService.sendMessages(systemPrompt, message, { type: "text" });
+  }
+
+  async sendChatMessages(systemPrompt: string, messages: ConversationMessage[]): Promise<JsonString> {
+    return this.chatService.sendConversation(systemPrompt, messages, { type: "text" });
   }
 
   async generateImage(prompt: string, model: string = OpenAIService.DALL_E_3): Promise<UrlString> {

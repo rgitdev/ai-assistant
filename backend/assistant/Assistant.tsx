@@ -1,4 +1,4 @@
-import { OpenAIService } from "backend/client/openai/OpenAIService";
+import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { systemPrompt } from "./prompts/systemPrompt";
 
@@ -18,7 +18,13 @@ export class Assistant {
 
   async sendMessage(message: string): Promise<string> {
     console.log("Sending message to assistant:", message);
-    const response = await this.openAIService.sendChatMessages(systemPrompt, message);
+    const response = await this.openAIService.sendChatMessage(systemPrompt, message);
+    return response;
+  }
+
+  async sendConversation(messages: ConversationMessage[]): Promise<string> {
+    console.log("Sending conversation to assistant:", messages.length, "messages");
+    const response = await this.openAIService.sendChatMessages(systemPrompt, messages);
     return response;
   }
 

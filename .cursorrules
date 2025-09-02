@@ -1,0 +1,80 @@
+# AI Assistant Project - Cursor Rules
+
+## Project Overview
+This is a Bun-based React application with a separate backend API server that provides AI assistant functionality via OpenAI integration.
+
+## Technology Stack
+- **Runtime**: Bun (package manager and runtime)
+- **Frontend**: React with TypeScript JSX
+- **Backend**: Bun server with TypeScript
+- **AI Integration**: OpenAI API with Langfuse monitoring
+- **Development**: Hot reload enabled for both frontend and backend
+
+## Project Structure
+- `src/` - Main React application entry point and components
+- `webapp/` - Full-featured web application with chat interface
+  - `components/` - React components for chat UI
+  - `client/` - AssistantClient for API communication
+  - `config/` - Chat configuration
+  - `styles/` - CSS including markdown styling
+- `backend/` - API server and AI assistant logic
+  - `api/assistant/` - REST API controller and sample responses
+  - `assistant/` - Core Assistant class and system prompts
+  - `client/openai/` - OpenAI service integration with factory pattern
+
+## Development Commands
+- Install dependencies: `bun install`
+- Start development (frontend): `bun dev`
+- Start webapp: `bun webapp`
+- Start backend: `bun backend`
+- Build for production: `bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='"production"' --env='BUN_PUBLIC_*'`
+- Start production: `bun start`
+
+## Code Style & Conventions
+- Use TypeScript with strict typing
+- Prefer functional components with hooks for React
+- Use factory pattern for service creation (OpenAIServiceFactory)
+- Follow REST API conventions for endpoints
+- Use proper error handling with try-catch blocks
+- Implement CORS headers for API responses
+
+## Architecture Patterns
+- **Backend**: Service layer pattern with controllers
+- **Frontend**: Component-based architecture with client SDK
+- **AI Integration**: Factory pattern for OpenAI service instances
+- **State Management**: React hooks and context where needed
+
+## API Endpoints
+- `POST /api/assistant/chat` - Send message to assistant
+- `GET /api/assistant/conversations/:id` - Get conversation history
+- `DELETE /api/assistant/conversations/:id` - Clear conversation
+- `GET /api/assistant/health` - Health check endpoint
+
+## Environment Requirements
+- Requires `OPENAI_API_KEY` environment variable in `.env` file
+- Uses Bun runtime and package manager
+
+## Development Guidelines
+1. Always use TypeScript with proper type definitions
+2. Implement proper error handling and logging
+3. Use the existing client/service patterns
+4. Follow the established folder structure
+5. Add CORS headers for API responses
+6. Use Bun-specific APIs when beneficial
+7. Implement proper markdown rendering for chat responses
+8. Use factory pattern for service instantiation
+9. Maintain conversation state properly
+10. Include proper health check endpoints
+
+## File Naming
+- Use PascalCase for components and classes
+- Use camelCase for functions and variables
+- Use kebab-case for CSS classes
+- Use .tsx extension for React components
+- Use .ts extension for pure TypeScript files
+
+## Testing & Quality
+- Ensure all endpoints return proper HTTP status codes
+- Implement proper error messages for API responses
+- Use proper TypeScript interfaces for API contracts
+- Test both frontend and backend integration

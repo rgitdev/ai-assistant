@@ -3,6 +3,7 @@ import { basicResponses } from "./samples/basicResponses";
 import { multilineResponses } from "./samples/multilineResponses"; 
 import { markdownResponses } from "./samples/markdownResponses";
 import { Assistant } from "backend/assistant/Assistant";
+import { ConversationMessage } from "backend/client/openai/OpenAIService";
 
 export interface ChatMessage {
   id: string;
@@ -27,9 +28,14 @@ export interface ChatResponse {
 export class AssistantController {
   private conversations: Map<string, ChatMessage[]> = new Map();
   
-  private async getAssistantResponse(userMessage: string): Promise<string> {
+  private async getAssistantResponse(conversation: ChatMessage[]): Promise<string> {
     const assistant = new Assistant();
-    return await assistant.sendMessage(userMessage);
+    // Convert ChatMessage[] to ConversationMessage[]
+    const conversationMessages: ConversationMessage[] = conversation.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+    return await assistant.sendConversation(conversationMessages);
   }
   // Simulated AI responses - you can replace this with actual LLM integration
   private getSimulatedResponse(userMessage: string): string {
@@ -115,18 +121,10 @@ export class AssistantController {
       // Simulate AI processing
       await this.simulateProcessingDelay();
       
-      // Get assistant response
+      // Get assistant response using full conversation
       const aiResponse : ChatResponse = {
         id: this.generateId(),
-        content: await this.getAssistantResponse(body.message),
-        role: 'assistant',
-        timestamp: new Date().toISOString(),
-        conversationId
-      };
-      // Generate AI response
-      const aiGeneratedResponse: ChatResponse = {
-        id: this.generateId(),
-        content: this.getSimulatedResponse(body.message),
+        content: await this.getAssistantResponse(conversation),
         role: 'assistant',
         timestamp: new Date().toISOString(),
         conversationId

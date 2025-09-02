@@ -3,6 +3,7 @@ import Langfuse, { observeOpenAI } from "langfuse";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { CompletionUsage } from "openai/resources/completions";
 import type { ChatCompletion } from "openai/resources/chat/completions";
+import type { ConversationMessage } from "./OpenAIService";
 
 
 
@@ -42,19 +43,33 @@ export class OpenAIChatService {
   }
 
   async sendMessage(message: string): Promise<string> {
-    return this.sendMessagesInternal(undefined, message);
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "user", content: message }
+    ];
+    return this.sendMessagesInternal(messages);
   }
 
   async sendMessages(systemPrompt: string, message: string, responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
-    return this.sendMessagesInternal(systemPrompt, message, responseFormat);
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: message }
+    ];
+    return this.sendMessagesInternal(messages, responseFormat);
   }
 
-  private async sendMessagesInternal(systemPrompt: string | undefined, message: string, responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
+  async sendConversation(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
+    const formattedMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      ...messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    ];
+    return this.sendMessagesInternal(formattedMessages, { type: "text" });
+  }
+
+  private async sendMessagesInternal(messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[], responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
     try {
-      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-        ...(systemPrompt ? [{ role: "system", content: systemPrompt } as const] : []),
-        { role: "user", content: message } as const
-      ];
       
       const response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create({
         model: this.model,
@@ -83,6 +98,7 @@ export class OpenAIChatService {
   protected notifyObservers(response: ChatCompletion): void {
     this.responseObservers.forEach(observer => observer(response));
   }
+
 
   public shutdown(): void {
     if (this.langfuseWrapper) {
