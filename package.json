@@ -12,6 +12,8 @@
     "webapp": "bun --hot webapp/index.tsx"
   },
   "dependencies": {
+    "langfuse": "^3.38.5",
+    "openai": "^5.17.0",
     "react": "^19",
     "react-dom": "^19"
   },
