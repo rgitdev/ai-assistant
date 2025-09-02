@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { ChatContainer } from './ChatContainer';
 import { Message } from './ChatMessage';
+import { chatConfig } from '../config/chatConfig';
 
 export const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -112,6 +113,7 @@ export const ChatApp: React.FC = () => {
         >
           Clear Chat
         </button>
+        
         <div className="message-count">
           {messages.length} message{messages.length !== 1 ? 's' : ''}
         </div>
@@ -121,6 +123,7 @@ export const ChatApp: React.FC = () => {
         messages={messages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
+        markdownSupported={chatConfig.markdownSupported}
       />
     </div>
   );

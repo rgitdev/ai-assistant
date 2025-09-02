@@ -1,4 +1,7 @@
 import { serve } from "bun";
+import { basicResponses } from "./samples/basicResponses";
+import { multilineResponses } from "./samples/multilineResponses"; 
+import { markdownResponses } from "./samples/markdownResponses";
 
 export interface ChatMessage {
   id: string;
@@ -25,23 +28,7 @@ export class AssistantController {
   
   // Simulated AI responses - you can replace this with actual LLM integration
   private getSimulatedResponse(userMessage: string): string {
-    const responses = [
-      "I understand your message. How can I help you further?",
-      "That's an interesting question. Let me think about that...",
-      "I'd be happy to assist you with that. Could you provide more details?",
-      "Thank you for sharing that with me. What would you like to explore next?",
-      "I see what you're asking about. Here's what I think...",
-      "That's a great point! Let me elaborate on that topic.",
-      "I appreciate your question. Here's my perspective on that matter.",
-      "Interesting! I'd like to learn more about your thoughts on this.",
-      "Based on what you've shared, I believe we can work together to find a solution.",
-      "That's a fascinating topic. Let me provide some insights on that.",
-      "I understand your concern. Here's how I would approach this situation.",
-      "Great question! This is something I've thought about before. Let me explain...",
-      "I can see why you'd ask about that. Here's my take on the matter.",
-      "That's a complex issue. Let me break it down for you step by step.",
-      "I appreciate you bringing this up. Here's what I think we should consider."
-    ];
+    const allResponses = [...basicResponses, ...multilineResponses, ...markdownResponses];
     
     // Add some context-aware responses based on keywords
     const lowerMessage = userMessage.toLowerCase();
@@ -70,8 +57,12 @@ export class AssistantController {
       return "I don't have access to real-time weather data, but I can help you understand weather patterns, climate science, or suggest how to check weather information in your area.";
     }
     
+    if (lowerMessage.includes('markdown')) {
+      return markdownResponses[Math.floor(Math.random() * markdownResponses.length)];
+    }
+    
     // Default to random response
-    return responses[Math.floor(Math.random() * responses.length)];
+    return allResponses[Math.floor(Math.random() * allResponses.length)];
   }
   
   private generateId(): string {

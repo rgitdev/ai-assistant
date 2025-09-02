@@ -8,13 +8,15 @@ interface ChatContainerProps {
   onSendMessage: (message: string) => void;
   isLoading?: boolean;
   disabled?: boolean;
+  markdownSupported?: boolean;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
   messages,
   onSendMessage,
   isLoading = false,
-  disabled = false
+  disabled = false,
+  markdownSupported = false
 }) => {
   return (
     <div className="chat-container">
@@ -27,7 +29,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       </div>
       
       <div className="chat-body">
-        <MessageList messages={messages} isLoading={isLoading} />
+        <MessageList messages={messages} isLoading={isLoading} markdownSupported={markdownSupported} />
       </div>
       
       <div className="chat-footer">

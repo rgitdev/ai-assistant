@@ -1,12 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { ChatMessage, Message } from './ChatMessage';
+import { ChatMarkdownMessage } from './ChatMarkdownMessage';
+import { chatConfig } from '../config/chatConfig';
 
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
+  markdownSupported?: boolean;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading = false }) => {
+export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading = false, markdownSupported = false }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -32,9 +35,17 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading = 
   return (
     <div className="message-list">
       <div className="messages-container">
-        {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
-        ))}
+        {messages.map((message) => {
+          // Use ChatMarkdownMessage for assistant messages when markdown is supported
+          // Use ChatMessage for user messages or when markdown is disabled
+          if (markdownSupported && message.role === 'assistant' && chatConfig.enableMarkdownForAssistant) {
+            return <ChatMarkdownMessage key={message.id} message={message} />;
+          } else if (markdownSupported && message.role === 'user' && chatConfig.enableMarkdownForUser) {
+            return <ChatMarkdownMessage key={message.id} message={message} />;
+          } else {
+            return <ChatMessage key={message.id} message={message} />;
+          }
+        })}
         
         {isLoading && (
           <div className="chat-message assistant-message">

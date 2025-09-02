@@ -1,4 +1,5 @@
 import "./index.css";
+import "./styles/markdown.css";
 import { ChatApp } from "./components/ChatApp";
 
 export function App() {
