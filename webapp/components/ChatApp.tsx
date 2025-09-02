@@ -5,28 +5,38 @@ import { Message } from './ChatMessage';
 export const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   };
 
-  const simulateAIResponse = async (userMessage: string): Promise<string> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
-    // Simple mock responses based on user input
-    const responses = [
-      "I understand your message. How can I help you further?",
-      "That's an interesting question. Let me think about that...",
-      "I'd be happy to assist you with that. Could you provide more details?",
-      "Thank you for sharing that with me. What would you like to explore next?",
-      "I see what you're asking about. Here's what I think...",
-      "That's a great point! Let me elaborate on that topic.",
-      "I appreciate your question. Here's my perspective on that matter.",
-      "Interesting! I'd like to learn more about your thoughts on this."
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
+  const sendMessageToAPI = async (userMessage: string): Promise<{ content: string; conversationId: string }> => {
+    try {
+      const response = await fetch('/api/assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          conversationId: conversationId || undefined
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        content: data.content,
+        conversationId: data.conversationId
+      };
+    } catch (error) {
+      console.error('Error sending message to API:', error);
+      throw error;
+    }
   };
 
   const handleSendMessage = useCallback(async (content: string) => {
@@ -42,8 +52,13 @@ export const ChatApp: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Simulate AI response
-      const aiResponse = await simulateAIResponse(content);
+      // Send message to API
+      const { content: aiResponse, conversationId: newConversationId } = await sendMessageToAPI(content);
+      
+      // Update conversation ID if this is the first message
+      if (!conversationId) {
+        setConversationId(newConversationId);
+      }
       
       const assistantMessage: Message = {
         id: generateId(),
@@ -58,7 +73,7 @@ export const ChatApp: React.FC = () => {
       
       const errorMessage: Message = {
         id: generateId(),
-        content: "I'm sorry, I encountered an error. Please try again.",
+        content: "I'm sorry, I encountered an error connecting to the AI service. Please try again.",
         role: 'assistant',
         timestamp: new Date()
       };
@@ -67,10 +82,24 @@ export const ChatApp: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [conversationId]);
 
-  const clearChat = () => {
+  const clearChat = async () => {
+    // Clear conversation on backend if we have a conversation ID
+    if (conversationId) {
+      try {
+        await fetch(`/api/assistant/conversations/${conversationId}`, {
+          method: 'DELETE',
+        });
+      } catch (error) {
+        console.error('Error clearing conversation on backend:', error);
+        // Continue with local clear even if backend fails
+      }
+    }
+    
+    // Clear local state
     setMessages([]);
+    setConversationId(null);
   };
 
   return (

@@ -1,11 +1,9 @@
 import { serve } from "bun";
 import index from "./index.html";
+import { assistantController } from "../webapp/api/assistant/AssistantController";
 
 const server = serve({
   routes: {
-    // Serve index.html for all unmatched routes.
-    "/*": index,
-
     "/api/hello": {
       async GET(req) {
         return Response.json({
@@ -27,6 +25,14 @@ const server = serve({
         message: `Hello, ${name}!`,
       });
     },
+
+    // Assistant API routes
+    "/api/assistant/*": async (req) => {
+      return assistantController.handleRequest(req);
+    },
+
+    // Serve index.html for all unmatched routes (must be last)
+    "/*": index,
   },
 
   development: process.env.NODE_ENV !== "production",

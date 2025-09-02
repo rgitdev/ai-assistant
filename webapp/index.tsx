@@ -1,11 +1,20 @@
 import { serve } from "bun";
 import index from "./index.html";
+import { assistantController } from "./api/assistant/AssistantController";
 
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
 
+    // Assistant API routes
+    "/api/assistant/*": { 
+      async POST (req) {
+      console.log("Assistant API request received");
+      return assistantController.handleRequest(req);
+    }},
+
+    // Legacy API routes (keeping for compatibility)
     "/api/hello": {
       async GET(req) {
         return Response.json({
