@@ -45,11 +45,11 @@ export class OpenAIChatService {
     return this.sendMessagesInternal(undefined, message);
   }
 
-  async sendMessages(systemPrompt: string, message: string, responseFormat: { type: "json_object" } | undefined = undefined): Promise<string> {
+  async sendMessages(systemPrompt: string, message: string, responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
     return this.sendMessagesInternal(systemPrompt, message, responseFormat);
   }
 
-  private async sendMessagesInternal(systemPrompt: string | undefined, message: string, responseFormat: { type: "json_object" } | undefined = undefined): Promise<string> {
+  private async sendMessagesInternal(systemPrompt: string | undefined, message: string, responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
     try {
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
         ...(systemPrompt ? [{ role: "system", content: systemPrompt } as const] : []),

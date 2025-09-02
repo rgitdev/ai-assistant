@@ -1,5 +1,4 @@
 import type { CompletionUsage } from "openai/resources";
-import { ICONS, logger } from "../util/Logger";
 
 export interface Usage {
     prompt_tokens: number;
@@ -73,12 +72,12 @@ export class OpenAIUsageCollector {
 
     public printTotalUsage(): void {
         const totalUsage = this.getTotalUsage();
-        logger.info(ICONS.SUMMARY, "OpenAI API Usage Summary:");
-        logger.info(ICONS.SUMMARY, `\t Responses: ${this.usageRecords.length}`);
-        logger.info(ICONS.SUMMARY, `\t Prompt tokens: ${totalUsage.prompt_tokens}`);
-        logger.info(ICONS.SUMMARY, `\t Completion tokens: ${totalUsage.completion_tokens}`);
-        logger.info(ICONS.SUMMARY, `\t Total tokens: ${totalUsage.total_tokens}`);
-        logger.info(ICONS.SUMMARY, `\t Cached tokens: ${totalUsage.cached_tokens}`);
+        console.log("OpenAI API Usage Summary:");
+        console.log(`\t Responses: ${this.usageRecords.length}`);
+        console.log(`\t Prompt tokens: ${totalUsage.prompt_tokens}`);
+        console.log(`\t Completion tokens: ${totalUsage.completion_tokens}`);
+        console.log(`\t Total tokens: ${totalUsage.total_tokens}`);
+        console.log(`\t Cached tokens: ${totalUsage.cached_tokens}`);
     }
 
     /**

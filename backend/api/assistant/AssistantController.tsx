@@ -2,6 +2,7 @@ import { serve } from "bun";
 import { basicResponses } from "./samples/basicResponses";
 import { multilineResponses } from "./samples/multilineResponses"; 
 import { markdownResponses } from "./samples/markdownResponses";
+import { Assistant } from "backend/assistant/Assistant";
 
 export interface ChatMessage {
   id: string;
@@ -26,6 +27,10 @@ export interface ChatResponse {
 export class AssistantController {
   private conversations: Map<string, ChatMessage[]> = new Map();
   
+  private async getAssistantResponse(userMessage: string): Promise<string> {
+    const assistant = new Assistant();
+    return await assistant.sendMessage(userMessage);
+  }
   // Simulated AI responses - you can replace this with actual LLM integration
   private getSimulatedResponse(userMessage: string): string {
     const allResponses = [...basicResponses, ...multilineResponses, ...markdownResponses];
@@ -110,8 +115,16 @@ export class AssistantController {
       // Simulate AI processing
       await this.simulateProcessingDelay();
       
+      // Get assistant response
+      const aiResponse : ChatResponse = {
+        id: this.generateId(),
+        content: await this.getAssistantResponse(body.message),
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        conversationId
+      };
       // Generate AI response
-      const aiResponse: ChatResponse = {
+      const aiGeneratedResponse: ChatResponse = {
         id: this.generateId(),
         content: this.getSimulatedResponse(body.message),
         role: 'assistant',

@@ -1,6 +1,6 @@
 import { serve } from "bun";
 import index from "./index.html";
-import { assistantController } from "./api/assistant/AssistantController";
+import { assistantClient, ChatResponse } from "./client/AssistantClient";
 
 const server = serve({
   routes: {
@@ -9,9 +9,9 @@ const server = serve({
 
     // Assistant API routes
     "/api/assistant/*": { 
-      async POST (req) {
+      async POST (req): Promise<Response> {
       console.log("Assistant API request received");
-      return assistantController.handleRequest(req);
+      return Response.json(await assistantClient.sendMessage(await req.json()));
     }},
 
     // Legacy API routes (keeping for compatibility)
