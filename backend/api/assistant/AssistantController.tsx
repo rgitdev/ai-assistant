@@ -1,7 +1,4 @@
-import { basicResponses } from "./samples/basicResponses";
-import { multilineResponses } from "./samples/multilineResponses"; 
-import { markdownResponses } from "./samples/markdownResponses";
-import { keywordResponses } from "./samples/keywordResponses";
+import { SampleHandler } from "./samples/SampleHandler";
 import { Assistant } from "backend/assistant/Assistant";
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
 
@@ -38,50 +35,7 @@ export class AssistantController {
     }));
     return await assistant.sendConversation(conversationMessages);
   }
-  // Simulated AI responses - you can replace this with actual LLM integration
-  private getSimulatedResponse(userMessage: string): string {
-    const allResponses = [...basicResponses, ...multilineResponses, ...markdownResponses];
-    
-    // Add some context-aware responses based on keywords
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      const choices = keywordResponses.greetings;
-      return choices[Math.floor(Math.random() * choices.length)];
-    }
-    
-    if (lowerMessage.includes('help')) {
-      const choices = keywordResponses.help;
-      return choices[Math.floor(Math.random() * choices.length)];
-    }
-    
-    if (lowerMessage.includes('thank')) {
-      const choices = keywordResponses.gratitude;
-      return choices[Math.floor(Math.random() * choices.length)];
-    }
-    
-    if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
-      const choices = keywordResponses.farewell;
-      return choices[Math.floor(Math.random() * choices.length)];
-    }
-    
-    if (lowerMessage.includes('code') || lowerMessage.includes('programming')) {
-      const choices = keywordResponses.programming;
-      return choices[Math.floor(Math.random() * choices.length)];
-    }
-    
-    if (lowerMessage.includes('weather')) {
-      const choices = keywordResponses.weather;
-      return choices[Math.floor(Math.random() * choices.length)];
-    }
-    
-    if (lowerMessage.includes('markdown')) {
-      return markdownResponses[Math.floor(Math.random() * markdownResponses.length)];
-    }
-    
-    // Default to random response
-    return allResponses[Math.floor(Math.random() * allResponses.length)];
-  }
+  // Simulated AI responses are handled via SampleHandler
   
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -122,7 +76,7 @@ export class AssistantController {
       
       // Get assistant response (simulated or real)
       const responseContent = this.useSimulatedResponses 
-        ? this.getSimulatedResponse(body.message)
+        ? SampleHandler.getSimulatedResponse(body.message)
         : await this.getAssistantResponse(conversation);
       
       const aiResponse : ChatResponse = {
