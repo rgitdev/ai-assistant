@@ -1,7 +1,7 @@
-import { serve } from "bun";
 import { basicResponses } from "./samples/basicResponses";
 import { multilineResponses } from "./samples/multilineResponses"; 
 import { markdownResponses } from "./samples/markdownResponses";
+import { keywordResponses } from "./samples/keywordResponses";
 import { Assistant } from "backend/assistant/Assistant";
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
 
@@ -46,27 +46,33 @@ export class AssistantController {
     const lowerMessage = userMessage.toLowerCase();
     
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return "Hello! I'm your AI assistant. How can I help you today?";
+      const choices = keywordResponses.greetings;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
     
     if (lowerMessage.includes('help')) {
-      return "I'm here to help! You can ask me questions, request explanations, or discuss any topic you'd like. What would you like to know?";
+      const choices = keywordResponses.help;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
     
     if (lowerMessage.includes('thank')) {
-      return "You're very welcome! I'm glad I could help. Is there anything else you'd like to discuss?";
+      const choices = keywordResponses.gratitude;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
     
     if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
-      return "Goodbye! It was great chatting with you. Feel free to come back anytime you need assistance!";
+      const choices = keywordResponses.farewell;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
     
     if (lowerMessage.includes('code') || lowerMessage.includes('programming')) {
-      return "I'd be happy to help with programming questions! Whether it's debugging, explaining concepts, or reviewing code, I'm here to assist. What specific programming topic would you like to explore?";
+      const choices = keywordResponses.programming;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
     
     if (lowerMessage.includes('weather')) {
-      return "I don't have access to real-time weather data, but I can help you understand weather patterns, climate science, or suggest how to check weather information in your area.";
+      const choices = keywordResponses.weather;
+      return choices[Math.floor(Math.random() * choices.length)];
     }
     
     if (lowerMessage.includes('markdown')) {
