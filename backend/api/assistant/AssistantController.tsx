@@ -4,39 +4,24 @@ import { multilineResponses } from "./samples/multilineResponses";
 import { markdownResponses } from "./samples/markdownResponses";
 import { Assistant } from "backend/assistant/Assistant";
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
-
-export interface ChatMessage {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: string;
-}
-
-export interface ChatRequest {
-  message: string;
-  conversationId?: string;
-}
-
-export interface ChatResponse {
-  id: string;
-  content: string;
-  role: 'assistant';
-  timestamp: string;
-  conversationId: string;
-}
+import { ChatMessage, ChatRequest, ChatResponse } from "backend/models/ChatMessage";
 
 export class AssistantController {
   private conversations: Map<string, ChatMessage[]> = new Map();
   private useSimulatedResponses: boolean = false; // Set to true to use simulated responses
+  private assistant: Assistant;
+  
+  constructor() {
+    this.assistant = new Assistant();
+  }
   
   private async getAssistantResponse(conversation: ChatMessage[]): Promise<string> {
-    const assistant = new Assistant();
     // Convert ChatMessage[] to ConversationMessage[]
     const conversationMessages: ConversationMessage[] = conversation.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
-    return await assistant.sendConversation(conversationMessages);
+    return await this.assistant.sendConversation(conversationMessages);
   }
   // Simulated AI responses - you can replace this with actual LLM integration
   private getSimulatedResponse(userMessage: string): string {

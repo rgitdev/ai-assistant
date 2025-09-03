@@ -13,6 +13,7 @@
     "backend": "bun --hot backend/index.tsx"
   },
   "dependencies": {
+    "drizzle-orm": "^0.44.5",
     "langfuse": "^3.38.5",
     "openai": "^5.17.0",
     "react": "^19",
