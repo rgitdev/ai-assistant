@@ -120,7 +120,18 @@ export class AssistantClient {
    */
   async testConnection(): Promise<boolean> {
     try {
-      await this.healthCheck();
+      const response = await fetch(`${this.baseUrl}/api/assistant/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error(`Health check failed with status: ${response.status}`);
+        return false;
+      }
+
       return true;
     } catch (error) {
       console.error('Connection test failed:', error);

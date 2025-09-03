@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ChatContainer } from './ChatContainer';
+import { AssistantStatus } from './AssistantStatus';
 import { Message } from './ChatMessage';
 import { chatConfig } from '../config/chatConfig';
 
@@ -8,9 +9,12 @@ export const ChatApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
+
   const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   };
+
+
 
   const sendMessageToAPI = async (userMessage: string): Promise<{ content: string; conversationId: string }> => {
     try {
@@ -106,16 +110,24 @@ export const ChatApp: React.FC = () => {
   return (
     <div className="chat-app">
       <div className="chat-controls">
-        <button 
-          onClick={clearChat}
-          className="clear-button"
-          disabled={messages.length === 0}
-        >
-          Clear Chat
-        </button>
+        <div className="controls-left">
+          <button 
+            onClick={clearChat}
+            className="clear-button"
+            disabled={messages.length === 0}
+          >
+            Clear Chat
+          </button>
+          
+          <div className="message-count">
+            {messages.length} message{messages.length !== 1 ? 's' : ''}
+          </div>
+        </div>
         
-        <div className="message-count">
-          {messages.length} message{messages.length !== 1 ? 's' : ''}
+        <div className="controls-right">
+          <AssistantStatus 
+            isLoading={isLoading}
+          />
         </div>
       </div>
       

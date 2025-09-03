@@ -149,10 +149,8 @@ const parseMarkdown = (text: string): React.ReactNode[] => {
           {parseInlineMarkdown(line)}
         </p>
       );
-    } else {
-      // Empty line - add spacing
-      elements.push(<br key={`br-${i}`} />);
     }
+    // Skip empty lines to reduce excessive spacing
   }
 
   return elements;

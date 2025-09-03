@@ -22,10 +22,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     <div className="chat-container">
       <div className="chat-header">
         <h2>AI Assistant</h2>
-        <div className="status-indicator">
-          <div className={`status-dot ${isLoading ? 'loading' : 'ready'}`}></div>
-          <span>{isLoading ? 'Thinking...' : 'Ready'}</span>
-        </div>
       </div>
       
       <div className="chat-body">

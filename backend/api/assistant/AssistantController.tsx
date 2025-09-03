@@ -27,6 +27,7 @@ export interface ChatResponse {
 
 export class AssistantController {
   private conversations: Map<string, ChatMessage[]> = new Map();
+  private useSimulatedResponses: boolean = false; // Set to true to use simulated responses
   
   private async getAssistantResponse(conversation: ChatMessage[]): Promise<string> {
     const assistant = new Assistant();
@@ -84,11 +85,6 @@ export class AssistantController {
     return 'conv_' + this.generateId();
   }
   
-  // Simulate AI processing delay
-  private async simulateProcessingDelay(): Promise<void> {
-    const delay = 1000 + Math.random() * 2000; // 1-3 seconds
-    await new Promise(resolve => setTimeout(resolve, delay));
-  }
   
   // POST /api/assistant/chat - Send a message and get AI response
   async handleChat(req: Request): Promise<Response> {
@@ -118,13 +114,14 @@ export class AssistantController {
       const conversation = this.conversations.get(conversationId)!;
       conversation.push(userMessage);
       
-      // Simulate AI processing
-      await this.simulateProcessingDelay();
+      // Get assistant response (simulated or real)
+      const responseContent = this.useSimulatedResponses 
+        ? this.getSimulatedResponse(body.message)
+        : await this.getAssistantResponse(conversation);
       
-      // Get assistant response using full conversation
       const aiResponse : ChatResponse = {
         id: this.generateId(),
-        content: await this.getAssistantResponse(conversation),
+        content: responseContent,
         role: 'assistant',
         timestamp: new Date().toISOString(),
         conversationId

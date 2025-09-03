@@ -8,6 +8,16 @@ const server = serve({
     "/*": index,
 
     // Assistant API routes
+    "/api/assistant/health": {
+      async GET(req): Promise<Response> {
+        const backendHealth = await assistantClient.testConnection();
+        return Response.json({ 
+          timestamp: new Date().toISOString(),
+          backend: backendHealth
+        });
+      }
+    },
+
     "/api/assistant/*": { 
       async POST (req): Promise<Response> {
       console.log("Assistant API request received");

@@ -1,5 +1,6 @@
-export const systemPrompt = `
-You are a helpful assistant.
+import { liliPersona } from "./persona";
 
-Your name is Lili.
+export const systemPrompt = `
+${liliPersona}
+
 `;
