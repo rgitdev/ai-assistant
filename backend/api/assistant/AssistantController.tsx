@@ -1,7 +1,4 @@
-import { serve } from "bun";
-import { basicResponses } from "./samples/basicResponses";
-import { multilineResponses } from "./samples/multilineResponses"; 
-import { markdownResponses } from "./samples/markdownResponses";
+import { SampleHandler } from "./samples/SampleHandler";
 import { Assistant } from "backend/assistant/Assistant";
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
 
@@ -38,44 +35,7 @@ export class AssistantController {
     }));
     return await assistant.sendConversation(conversationMessages);
   }
-  // Simulated AI responses - you can replace this with actual LLM integration
-  private getSimulatedResponse(userMessage: string): string {
-    const allResponses = [...basicResponses, ...multilineResponses, ...markdownResponses];
-    
-    // Add some context-aware responses based on keywords
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return "Hello! I'm your AI assistant. How can I help you today?";
-    }
-    
-    if (lowerMessage.includes('help')) {
-      return "I'm here to help! You can ask me questions, request explanations, or discuss any topic you'd like. What would you like to know?";
-    }
-    
-    if (lowerMessage.includes('thank')) {
-      return "You're very welcome! I'm glad I could help. Is there anything else you'd like to discuss?";
-    }
-    
-    if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
-      return "Goodbye! It was great chatting with you. Feel free to come back anytime you need assistance!";
-    }
-    
-    if (lowerMessage.includes('code') || lowerMessage.includes('programming')) {
-      return "I'd be happy to help with programming questions! Whether it's debugging, explaining concepts, or reviewing code, I'm here to assist. What specific programming topic would you like to explore?";
-    }
-    
-    if (lowerMessage.includes('weather')) {
-      return "I don't have access to real-time weather data, but I can help you understand weather patterns, climate science, or suggest how to check weather information in your area.";
-    }
-    
-    if (lowerMessage.includes('markdown')) {
-      return markdownResponses[Math.floor(Math.random() * markdownResponses.length)];
-    }
-    
-    // Default to random response
-    return allResponses[Math.floor(Math.random() * allResponses.length)];
-  }
+  // Simulated AI responses are handled via SampleHandler
   
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -116,7 +76,7 @@ export class AssistantController {
       
       // Get assistant response (simulated or real)
       const responseContent = this.useSimulatedResponses 
-        ? this.getSimulatedResponse(body.message)
+        ? SampleHandler.getSimulatedResponse(body.message)
         : await this.getAssistantResponse(conversation);
       
       const aiResponse : ChatResponse = {
