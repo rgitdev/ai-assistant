@@ -57,7 +57,7 @@ export class OpenAIChatService {
     return this.sendMessagesInternal(messages, responseFormat);
   }
 
-  async sendConversation(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
+  async sendConversation(systemPrompt: string, messages: ConversationMessage[], responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
     const formattedMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       ...messages.map(msg => ({
@@ -65,7 +65,7 @@ export class OpenAIChatService {
         content: msg.content
       }))
     ];
-    return this.sendMessagesInternal(formattedMessages, { type: "text" });
+    return this.sendMessagesInternal(formattedMessages, responseFormat);
   }
 
   private async sendMessagesInternal(messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[], responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
