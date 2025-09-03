@@ -17,7 +17,8 @@
     "langfuse": "^3.38.5",
     "openai": "^5.17.0",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/react": "^19",

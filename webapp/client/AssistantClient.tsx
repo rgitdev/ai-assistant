@@ -27,7 +27,6 @@ export interface ConversationResponse {
 export interface HealthResponse {
   status: string;
   timestamp: string;
-  activeConversations: number;
 }
 
 export class AssistantClient {

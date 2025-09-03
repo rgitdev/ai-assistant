@@ -4,6 +4,7 @@ import { systemPrompt } from "./prompts/systemPrompt";
 import { IConversationRepository } from "backend/repository/IConversationRepository";
 import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 import { ChatMessage } from "backend/models/ChatMessage";
+import { v4 as uuidv4 } from 'uuid';
 
 export class Assistant {
   
@@ -37,7 +38,7 @@ export class Assistant {
 
   async sendMessageToConversation(conversationId: string, userMessage: string): Promise<{ response: string; conversationId: string }> {
     const userChatMessage: ChatMessage = {
-      id: this.generateId(),
+      id: uuidv4(),
       content: userMessage,
       role: 'user',
       timestamp: new Date().toISOString()
@@ -45,10 +46,17 @@ export class Assistant {
 
     await this.conversationRepository.addMessage(conversationId, userChatMessage);
 
-    const response = await this.sendMessage(userMessage);
+    // Get full conversation history and send to OpenAI
+    const conversationMessages = await this.conversationRepository.getConversationMessages(conversationId);
+    const openAIMessages: ConversationMessage[] = conversationMessages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    const response = await this.sendConversation(openAIMessages);
 
     const assistantChatMessage: ChatMessage = {
-      id: this.generateId(),
+      id: uuidv4(),
       content: response,
       role: 'assistant',
       timestamp: new Date().toISOString()
@@ -71,9 +79,6 @@ export class Assistant {
     return await this.conversationRepository.getConversations();
   }
 
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
 }
 
 if (require.main === module) {

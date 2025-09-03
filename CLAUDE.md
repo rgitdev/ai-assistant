@@ -59,3 +59,4 @@ Requires `OPENAI_API_KEY` environment variable in `.env` file.
 - Two separate servers: webapp (frontend) and backend (API)
 - OpenAI integration with Langfuse monitoring support
 - Hot reload enabled for development
+- Do not add features that are not requested
