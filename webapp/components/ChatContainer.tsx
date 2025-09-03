@@ -20,10 +20,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 }) => {
   return (
     <div className="chat-container">
-      <div className="chat-header">
-        <h2>AI Assistant</h2>
-      </div>
-      
       <div className="chat-body">
         <MessageList messages={messages} isLoading={isLoading} markdownSupported={markdownSupported} />
       </div>

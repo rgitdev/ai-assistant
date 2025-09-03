@@ -5,3 +5,6 @@ export { ChatMessage, type Message } from './ChatMessage';
 export { ChatMarkdownMessage } from './ChatMarkdownMessage';
 export { MessageList } from './MessageList';
 export { TypingIndicator } from './TypingIndicator';
+export { Menu } from './Menu/Menu';
+export { MenuItem } from './Menu/MenuItem';
+export { About } from './About';
