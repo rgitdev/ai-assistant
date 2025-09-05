@@ -1,10 +1,14 @@
 export { ChatApp } from './ChatApp';
 export { ChatContainer } from './ChatContainer';
+export { ChatHeader } from './ChatHeader';
 export { ChatInput } from './ChatInput';
 export { ChatMessage, type Message } from './ChatMessage';
 export { ChatMarkdownMessage } from './ChatMarkdownMessage';
+export { ChatTitle } from './ChatTitle';
 export { MessageList } from './MessageList';
 export { TypingIndicator } from './TypingIndicator';
 export { Menu } from './Menu/Menu';
 export { MenuItem } from './Menu/MenuItem';
 export { About } from './About';
+export { ConversationSelection } from './ConversationSelection';
+export { ConversationListItem } from './ConversationListItem';

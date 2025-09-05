@@ -11,7 +11,9 @@ export class ConversationController {
   // GET /api/conversation - Get all conversations
   async getAllConversations(): Promise<Conversation[]> {
     try {
+      console.log('getAllConversations');
       const conversations = await this.assistant.getConversations();
+     
       return conversations;
     } catch (error) {
       throw new Error('Failed to retrieve conversations');
@@ -21,6 +23,7 @@ export class ConversationController {
   // GET /api/conversation/:id - Get conversation with messages
   async getConversation(conversationId: string): Promise<{ conversationId: string; messages: ChatMessage[] }> {
     try {
+      console.log('getConversation ', conversationId);
       const messages = await this.assistant.getConversationMessages(conversationId);
       return {
         conversationId,
@@ -28,6 +31,20 @@ export class ConversationController {
       };
     } catch (error) {
       throw new Error('Conversation not found');
+    }
+  }
+  
+  // PUT /api/conversation/:id - Update conversation name
+  async updateConversation(conversationId: string, data: { name: string }): Promise<{ conversationId: string; success: boolean }> {
+    try {
+      console.log('updateConversation ', conversationId, data.name);
+      await this.assistant.updateConversationName(conversationId, data.name);
+      return {
+        conversationId,
+        success: true
+      };
+    } catch (error) {
+      throw new Error('Failed to update conversation');
     }
   }
 }

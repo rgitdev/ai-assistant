@@ -79,6 +79,10 @@ export class Assistant {
     return await this.conversationRepository.getConversations();
   }
 
+  async updateConversationName(conversationId: string, name: string): Promise<void> {
+    await this.conversationRepository.updateConversationName(conversationId, name);
+  }
+
 }
 
 if (require.main === module) {

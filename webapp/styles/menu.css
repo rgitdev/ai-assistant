@@ -133,3 +133,176 @@
     transform: translateY(-2px);
   }
 }
+
+/* Conversation History Styles */
+.conversation-history {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  margin: 2rem;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.conversation-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.conversation-history-header h2 {
+  color: #1f2937;
+  font-size: 2rem;
+  margin: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.conversation-item {
+  background: rgba(118, 75, 162, 0.1);
+  border: 1px solid rgba(118, 75, 162, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  color: #1f2937;
+}
+
+.conversation-item:hover {
+  background: rgba(118, 75, 162, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  color: #1f2937;
+}
+
+.conversation-item.active {
+  background: rgba(255, 255, 255, 0.95);
+  color: #764ba2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: rgba(118, 75, 162, 0.3);
+}
+
+.conversation-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: inherit;
+}
+
+.conversation-date {
+  font-size: 0.875rem;
+  opacity: 0.7;
+  color: inherit;
+}
+
+.conversation-item.active .conversation-date {
+  opacity: 0.8;
+}
+
+.empty-conversations,
+.loading-conversations,
+.error-conversations {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+}
+
+.empty-conversations p,
+.loading-conversations p,
+.error-conversations p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.error-conversations {
+  color: #dc2626;
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Update new-chat-button to match design */
+.new-chat-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.new-chat-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(118, 75, 162, 0.3);
+}
+
+.new-chat-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive design for conversation history */
+@media (max-width: 768px) {
+  .conversation-history {
+    margin: 1rem;
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+  
+  .conversation-history-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .conversation-history-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .conversation-item {
+    padding: 1rem;
+  }
+  
+  .conversation-name {
+    font-size: 0.9rem;
+  }
+  
+  .conversation-date {
+    font-size: 0.8rem;
+  }
+}

@@ -58,44 +58,6 @@ export class AssistantClient {
   }
 
   /**
-   * Get conversation history by ID
-   */
-  async getConversation(conversationId: string): Promise<ConversationResponse> {
-    const response = await fetch(`${this.baseUrl}/api/assistant/conversations/${conversationId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(`Failed to get conversation: ${error.error || response.statusText}`);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * Clear a conversation by ID
-   */
-  async clearConversation(conversationId: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseUrl}/api/assistant/conversations/${conversationId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(`Failed to clear conversation: ${error.error || response.statusText}`);
-    }
-
-    return response.json();
-  }
-
-  /**
    * Check the health status of the assistant service
    */
   async healthCheck(): Promise<HealthResponse> {

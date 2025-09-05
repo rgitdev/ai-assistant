@@ -5,12 +5,29 @@ import React, { useState } from 'react';
 import { ChatApp } from "./components/ChatApp";
 import { Menu } from "./components/Menu/Menu";
 import { About } from "./components/About";
+import { ConversationSelection } from "./components/ConversationSelection";
+import { Conversation } from "./client/ConversationClient";
 
 export function App() {
   const [currentView, setCurrentView] = useState<string>('chat');
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationName, setSelectedConversationName] = useState<string | undefined>(undefined);
 
   const handleViewChange = (view: string) => {
     setCurrentView(view);
+  };
+
+  const handleConversationSelect = (id: string | null, name?: string) => {
+    setSelectedConversationId(id);
+    setSelectedConversationName(name);
+    setCurrentView('chat');
+  };
+
+  const handleConversationChange = (conversationId: string | null) => {
+    setSelectedConversationId(conversationId);
+    if (!conversationId) {
+      setSelectedConversationName(undefined);
+    }
   };
 
   return (
@@ -20,7 +37,16 @@ export function App() {
         
         <div className="app-content">
           {currentView === 'chat' ? (
-            <ChatApp />
+            <ChatApp 
+              selectedConversationId={selectedConversationId}
+              selectedConversationName={selectedConversationName}
+              onConversationChange={handleConversationChange}
+            />
+          ) : currentView === 'history' ? (
+            <ConversationSelection 
+              selectedConversationId={selectedConversationId}
+              onConversationSelect={handleConversationSelect}
+            />
           ) : (
             <About />
           )}

@@ -19,6 +19,11 @@ export const Menu: React.FC<MenuProps> = ({ activeView, onViewChange }) => {
           onClick={() => onViewChange('chat')} 
         />
         <MenuItem 
+          label="Chat History" 
+          isActive={activeView === 'history'} 
+          onClick={() => onViewChange('history')} 
+        />
+        <MenuItem 
           label="About" 
           isActive={activeView === 'about'} 
           onClick={() => onViewChange('about')} 

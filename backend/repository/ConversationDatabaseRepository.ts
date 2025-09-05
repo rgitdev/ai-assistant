@@ -55,4 +55,8 @@ export class ConversationDatabaseRepository implements IConversationRepository {
       timestamp: msg.created_at,
     }));
   }
+
+  async updateConversationName(conversationId: string, name: string): Promise<void> {
+    throw new Error('updateConversationName not implemented for database repository');
+  }
 }

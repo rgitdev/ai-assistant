@@ -1,31 +1,42 @@
 import React from 'react';
 import { AssistantStatus } from './AssistantStatus';
+import { ChatTitle } from './ChatTitle';
 
 interface ChatHeaderProps {
   messageCount: number;
   isLoading: boolean;
-  onClearChat: () => void;
+  conversationId: string | null;
+  conversationName?: string;
+  onNewChat: () => void;
+  onNameUpdate?: (newName: string) => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   messageCount,
   isLoading,
-  onClearChat
+  conversationId,
+  conversationName,
+  onNewChat,
+  onNameUpdate
 }) => {
   return (
     <div className="chat-header">
       <div className="chat-header-content">
         <div className="header-left">
-          <h2>AI Assistant</h2>
+          <ChatTitle
+            conversationId={conversationId}
+            conversationName={conversationName}
+            onNameUpdate={onNameUpdate}
+          />
         </div>
         
         <div className="header-center">
           <button 
-            onClick={onClearChat}
-            className="clear-button"
-            disabled={messageCount === 0}
+            onClick={onNewChat}
+            className="new-chat-button"
+            disabled={isLoading}
           >
-            Clear Chat
+            New Chat
           </button>
           
           <div className="message-count">

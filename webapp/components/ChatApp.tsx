@@ -3,12 +3,70 @@ import { ChatContainer } from './ChatContainer';
 import { ChatHeader } from './ChatHeader';
 import { Message } from './ChatMessage';
 import { chatConfig } from '../config/chatConfig';
+import { conversationClient } from '../client/ConversationClient';
 
-export const ChatApp: React.FC = () => {
+interface ChatAppProps {
+  selectedConversationId?: string | null;
+  selectedConversationName?: string;
+  onConversationChange?: (conversationId: string | null) => void;
+}
+
+export const ChatApp: React.FC<ChatAppProps> = ({ 
+  selectedConversationId,
+  selectedConversationName, 
+  onConversationChange 
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationName, setConversationName] = useState<string | undefined>(undefined);
 
+  // Effect to handle conversation changes from parent
+  useEffect(() => {
+    if (selectedConversationId !== conversationId) {
+      setConversationId(selectedConversationId || null);
+      setConversationName(selectedConversationName);
+      
+      if (selectedConversationId) {
+        // Load conversation messages from API
+        loadConversationMessages(selectedConversationId);
+      } else {
+        // New chat - clear messages and name
+        setMessages([]);
+        setConversationName(undefined);
+      }
+    }
+  }, [selectedConversationId, selectedConversationName, conversationId]);
+
+  const loadConversationMessages = async (conversationId: string) => {
+    try {
+      setIsLoading(true);
+      const conversationData = await conversationClient.getConversation(conversationId);
+      
+      // Convert ChatMessage[] to Message[]
+      const convertedMessages: Message[] = conversationData.messages.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        role: msg.role,
+        timestamp: new Date(msg.timestamp)
+      }));
+      
+      setMessages(convertedMessages);
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
+      
+      const errorMessage: Message = {
+        id: generateId(),
+        content: "Failed to load conversation history. Please try again.",
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages([errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -63,6 +121,7 @@ export const ChatApp: React.FC = () => {
       // Update conversation ID if this is the first message
       if (!conversationId) {
         setConversationId(newConversationId);
+        onConversationChange?.(newConversationId);
       }
       
       const assistantMessage: Message = {
@@ -87,24 +146,20 @@ export const ChatApp: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId]);
+  }, [conversationId, onConversationChange]);
 
-  const clearChat = async () => {
-    // Clear conversation on backend if we have a conversation ID
-    if (conversationId) {
-      try {
-        await fetch(`/api/assistant/conversations/${conversationId}`, {
-          method: 'DELETE',
-        });
-      } catch (error) {
-        console.error('Error clearing conversation on backend:', error);
-        // Continue with local clear even if backend fails
-      }
-    }
-    
-    // Clear local state
+  const newChat = async () => {
+    // Start a new conversation
     setMessages([]);
     setConversationId(null);
+    setConversationName(undefined);
+    // Notify parent component about conversation change
+    onConversationChange?.(null);
+  };
+
+  const handleNameUpdate = (newName: string) => {
+    setConversationName(newName);
+    // Could also notify parent component if needed
   };
 
   return (
@@ -112,7 +167,10 @@ export const ChatApp: React.FC = () => {
       <ChatHeader
         messageCount={messages.length}
         isLoading={isLoading}
-        onClearChat={clearChat}
+        conversationId={conversationId}
+        conversationName={conversationName}
+        onNewChat={newChat}
+        onNameUpdate={handleNameUpdate}
       />
       
       <ChatContainer

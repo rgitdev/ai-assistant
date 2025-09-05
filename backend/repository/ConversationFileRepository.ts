@@ -77,4 +77,17 @@ export class ConversationFileRepository implements IConversationRepository {
     const storage = await this.readStorage();
     return storage[conversationId]?.messages || [];
   }
+
+  async updateConversationName(conversationId: string, name: string): Promise<void> {
+    const storage = await this.readStorage();
+    
+    if (!storage[conversationId]) {
+      throw new Error('Conversation not found');
+    }
+
+    storage[conversationId].metadata.name = name;
+    storage[conversationId].metadata.updatedAt = new Date().toISOString();
+
+    await this.writeStorage(storage);
+  }
 }

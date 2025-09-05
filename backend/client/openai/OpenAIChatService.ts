@@ -27,7 +27,7 @@ export class OpenAIChatService {
 
     this.client = new OpenAI({
       apiKey: apiKey,
-      timeout: 10000, // 10 seconds timeout
+      timeout: 30000, // 10 seconds timeout
     });
 
     this.langfuseWrapper = undefined;
