@@ -29,21 +29,19 @@ const server = serve({
   port: 3001,
   routes: {
     // Assistant API routes - specific endpoints
-    "/api/assistant/chat": async (req) => {
-      console.log(`Chat request: ${req.method} ${req.url}`);
-      
-      if (req.method !== 'POST') {
-        return addCorsHeaders(Response.json({ error: 'Method not allowed' }, { status: 405 }));
-      }
-
-      try {
-        const requestBody: ChatRequest = await req.json();
-        const result = await assistantController.handleChat(requestBody);
-        return addCorsHeaders(Response.json(result));
-      } catch (error) {
-        console.error('Error in chat:', error);
-        const status = error instanceof Error && error.message.includes('required') ? 400 : 500;
-        return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
+    "/api/assistant/chat": {
+      async POST(req) {
+        console.log(`Chat request: ${req.method} ${req.url}`);
+        
+        try {
+          const requestBody: ChatRequest = await req.json();
+          const result = await assistantController.handleChat(requestBody);
+          return addCorsHeaders(Response.json(result));
+        } catch (error) {
+          console.error('Error in chat:', error);
+          const status = error instanceof Error && error.message.includes('required') ? 400 : 500;
+          return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
+        }
       }
     },
     
@@ -64,72 +62,40 @@ const server = serve({
       }
     }},
     
-    "/api/conversation": async (req) => {
-      console.log(`Conversation list request: ${req.method} ${req.url}`);
-      
-      if (req.method !== 'GET') {
-        return addCorsHeaders(Response.json({ error: 'Method not allowed' }, { status: 405 }));
-      }
-
-      try {
-        const result = await conversationController.getAllConversations();
-        return addCorsHeaders(Response.json(result));
-      } catch (error) {
-        console.error('Error getting conversations:', error);
-        return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 }));
-      }
-    },
-    
-    "/api/conversation/*": async (req) => {
-      console.log(`Conversation request: ${req.method} ${req.url}`);
-      
-      const url = new URL(req.url);
-      const pathParts = url.pathname.split('/');
-      const conversationId = pathParts[pathParts.length - 1];
-      
-      if (!conversationId) {
-        return addCorsHeaders(Response.json({ error: 'Invalid conversation ID' }, { status: 400 }));
-      }
-
-      if (req.method !== 'GET') {
-        return addCorsHeaders(Response.json({ error: 'Method not allowed' }, { status: 405 }));
-      }
-
-      try {
-        const result = await conversationController.getConversation(conversationId);
-        return addCorsHeaders(Response.json(result));
-      } catch (error) {
-        console.error('Error getting conversation:', error);
-        const status = error instanceof Error && error.message.includes('not found') ? 404 : 500;
-        return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
-      }
-    },
-    
-    "/api/assistant/conversations/*": async (req) => {
-      console.log(`Conversation request: ${req.method} ${req.url}`);
-      
-      const url = new URL(req.url);
-      const pathParts = url.pathname.split('/');
-      const conversationId = pathParts[pathParts.length - 1];
-      
-      if (!conversationId) {
-        return addCorsHeaders(Response.json({ error: 'Invalid conversation ID' }, { status: 400 }));
-      }
-
-      try {
-        if (req.method === 'GET') {
-          const result = await assistantController.getConversation(conversationId);
+    "/api/conversation": {
+      async GET(req) {
+        console.log(`Conversation list request: ${req.method} ${req.url}`);
+        
+        try {
+          const result = await conversationController.getAllConversations();
           return addCorsHeaders(Response.json(result));
-        } else if (req.method === 'DELETE') {
-          const result = await assistantController.clearConversation(conversationId);
-          return addCorsHeaders(Response.json(result));
-        } else {
-          return addCorsHeaders(Response.json({ error: 'Method not allowed' }, { status: 405 }));
+        } catch (error) {
+          console.error('Error getting conversations:', error);
+          return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 }));
         }
-      } catch (error) {
-        console.error('Error in conversation:', error);
-        const status = error instanceof Error && error.message.includes('not found') ? 404 : 500;
-        return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
+      }
+    },
+    
+    "/api/conversation/*": {
+      async GET(req) {
+        console.log(`Conversation request: ${req.method} ${req.url}`);
+        
+        const url = new URL(req.url);
+        const pathParts = url.pathname.split('/');
+        const conversationId = pathParts[pathParts.length - 1];
+        
+        if (!conversationId) {
+          return addCorsHeaders(Response.json({ error: 'Invalid conversation ID' }, { status: 400 }));
+        }
+
+        try {
+          const result = await conversationController.getConversation(conversationId);
+          return addCorsHeaders(Response.json(result));
+        } catch (error) {
+          console.error('Error getting conversation:', error);
+          const status = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+          return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
+        }
       }
     },
   },
