@@ -19,6 +19,11 @@ export interface ChatResponse {
   conversationId: string;
 }
 
+export interface ChatEditRequest {
+  message: string;
+  conversationId: string;
+}
+
 export interface ConversationResponse {
   conversationId: string;
   messages: ChatMessage[];
@@ -52,6 +57,26 @@ export class AssistantClient {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new Error(`Failed to send message: ${error.error || response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Edit the last user message and regenerate the assistant response
+   */
+  async editLastMessage(messageId: string, request: ChatEditRequest): Promise<ChatResponse> {
+    const response = await fetch(`${this.baseUrl}/api/assistant/chat/${messageId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(`Failed to edit message: ${error.error || response.statusText}`);
     }
 
     return response.json();

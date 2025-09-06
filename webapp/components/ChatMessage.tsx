@@ -10,9 +10,11 @@ export interface Message {
 
 interface ChatMessageProps {
   message: Message;
+  children?: React.ReactNode;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = (props: ChatMessageProps) => {
+  const { message, children } = props;
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
 
@@ -47,14 +49,18 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               <span></span>
             </div>
           ) : (
-            <div className="message-text-content">
-              {message.content.split('\n').map((line, index) => (
-                <React.Fragment key={index}>
-                  {line}
-                  {index < message.content.split('\n').length - 1 && <br />}
-                </React.Fragment>
-              ))}
-            </div>
+            children ? (
+              <div className="message-text-content">{children}</div>
+            ) : (
+              <div className="message-text-content">
+                {message.content.split('\n').map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    {index < message.content.split('\n').length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
