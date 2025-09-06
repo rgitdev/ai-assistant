@@ -11,9 +11,11 @@ export interface Message {
 
 interface ChatMarkdownMessageProps {
   message: Message;
+  children?: React.ReactNode;
 }
 
-export const ChatMarkdownMessage: React.FC<ChatMarkdownMessageProps> = ({ message }) => {
+export const ChatMarkdownMessage: React.FC<ChatMarkdownMessageProps> = (props: ChatMarkdownMessageProps) => {
+  const { message, children } = props;
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
 
@@ -48,9 +50,13 @@ export const ChatMarkdownMessage: React.FC<ChatMarkdownMessageProps> = ({ messag
               <span></span>
             </div>
           ) : (
-            <div className="message-text-content markdown-content">
-              {isAssistant ? MarkdownRenderer.parseAndRender(message.content) : message.content}
-            </div>
+            children ? (
+              <div className="message-text-content markdown-content">{children}</div>
+            ) : (
+              <div className="message-text-content markdown-content">
+                {isAssistant ? MarkdownRenderer.parseAndRender(message.content) : message.content}
+              </div>
+            )
           )}
         </div>
       </div>
