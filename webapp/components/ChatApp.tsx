@@ -77,25 +77,13 @@ export const ChatApp: React.FC<ChatAppProps> = (props: ChatAppProps) => {
 
   const sendMessageToAPI = async (userMessage: string): Promise<{ content: string; conversationId: string }> => {
     try {
-      const response = await fetch('/api/assistant/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          conversationId: conversationId || undefined
-        }),
+      const data = await assistantClient.sendMessage({
+        message: userMessage,
+        conversationId: conversationId || undefined,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
       return {
         content: data.content,
-        conversationId: data.conversationId
+        conversationId: data.conversationId,
       };
     } catch (error) {
       console.error('Error sending message to API:', error);
