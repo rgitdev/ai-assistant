@@ -83,11 +83,7 @@ export class Assistant {
     await this.conversationRepository.updateConversationName(conversationId, name);
   }
 
-  async editLastUserMessageAndRegenerate(
-    conversationId: string,
-    messageId: string,
-    newContent: string
-  ): Promise<{ response: string; conversationId: string }> {
+  private async validateLastMessage(conversationId: string, messageId: string): Promise<void> {
     const messages = await this.conversationRepository.getConversationMessages(conversationId);
     if (!messages || messages.length === 0) {
       throw new Error('Conversation is empty');
@@ -104,6 +100,14 @@ export class Assistant {
     if (lastUserMessage.id !== messageId) {
       throw new Error('Only the last user message can be edited');
     }
+  }
+
+  async editLastUserMessageAndRegenerate(
+    conversationId: string,
+    messageId: string,
+    newContent: string
+  ): Promise<{ response: string; conversationId: string }> {
+    await this.validateLastMessage(conversationId, messageId);
 
     await this.conversationRepository.updateMessage(messageId, newContent);
     await this.conversationRepository.deleteMessagesAfter(conversationId, messageId);
