@@ -6,4 +6,6 @@ export interface IConversationRepository {
   getConversations(): Promise<Conversation[]>;
   getConversationMessages(conversationId: string): Promise<ChatMessage[]>;
   updateConversationName(conversationId: string, name: string): Promise<void>;
+  updateMessage(messageId: string, content: string): Promise<void>;
+  deleteMessagesAfter(conversationId: string, messageId: string): Promise<void>;
 }

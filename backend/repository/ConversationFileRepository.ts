@@ -90,4 +90,39 @@ export class ConversationFileRepository implements IConversationRepository {
 
     await this.writeStorage(storage);
   }
+
+  async updateMessage(messageId: string, content: string): Promise<void> {
+    const storage = await this.readStorage();
+    let found = false;
+    for (const convId of Object.keys(storage)) {
+      const conv = storage[convId];
+      const index = conv.messages.findIndex(m => m.id === messageId);
+      if (index !== -1) {
+        conv.messages[index].content = content;
+        conv.messages[index].timestamp = new Date().toISOString();
+        conv.metadata.updatedAt = new Date().toISOString();
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new Error('Message not found');
+    }
+    await this.writeStorage(storage);
+  }
+
+  async deleteMessagesAfter(conversationId: string, messageId: string): Promise<void> {
+    const storage = await this.readStorage();
+    const conv = storage[conversationId];
+    if (!conv) {
+      throw new Error('Conversation not found');
+    }
+    const index = conv.messages.findIndex(m => m.id === messageId);
+    if (index === -1) {
+      throw new Error('Message not found');
+    }
+    conv.messages = conv.messages.slice(0, index + 1);
+    conv.metadata.updatedAt = new Date().toISOString();
+    await this.writeStorage(storage);
+  }
 }

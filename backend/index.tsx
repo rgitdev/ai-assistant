@@ -1,7 +1,7 @@
 import { serve } from "bun";
 import { assistantController } from "./api/assistant/AssistantController";
 import { conversationController } from "./api/conversation/ConversationController";
-import { ChatRequest } from "./models/ChatMessage";
+import { ChatEditRequest, ChatRequest } from "./models/ChatMessage";
 
 // CORS headers
 const corsHeaders = {
@@ -48,6 +48,30 @@ const server = serve({
       }
     },
     
+    "/api/assistant/chat/*": {
+      async OPTIONS(req) {
+        return addCorsHeaders(new Response(null, { status: 200 }));
+      },
+      async PUT(req) {
+        console.log(`Edit chat request: ${req.method} ${req.url}`);
+        const url = new URL(req.url);
+        const pathParts = url.pathname.split('/');
+        const messageId = pathParts[pathParts.length - 1];
+        if (!messageId) {
+          return addCorsHeaders(Response.json({ error: 'Invalid message ID' }, { status: 400 }));
+        }
+        try {
+          const requestBody: ChatEditRequest = await req.json();
+          const result = await assistantController.handleEditChat(messageId, requestBody);
+          return addCorsHeaders(Response.json(result));
+        } catch (error) {
+          console.error('Error editing chat:', error);
+          const status = error instanceof Error && (error.message.includes('required') || error.message.includes('Only the last')) ? 400 : 500;
+          return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
+        }
+      }
+    },
+
     "/api/assistant/health": {
       async OPTIONS(req) {
         return addCorsHeaders(new Response(null, { status: 200 }));
