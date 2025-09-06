@@ -18,6 +18,11 @@ export interface ChatResponse {
   conversationId: string;
 }
 
+export interface ChatEditRequest {
+  conversationId: string;
+  message: string;
+}
+
 export interface Conversation {
   id: string;
   createdAt: string;

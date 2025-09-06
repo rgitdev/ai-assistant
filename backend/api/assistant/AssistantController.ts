@@ -1,6 +1,6 @@
 import { SampleHandler } from "./samples/SampleHandler";
 import { Assistant } from "backend/assistant/Assistant";
-import { ChatMessage, ChatRequest, ChatResponse } from "backend/models/ChatMessage";
+import { ChatMessage, ChatRequest, ChatResponse, ChatEditRequest } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
 
 export class AssistantController {
@@ -76,6 +76,33 @@ export class AssistantController {
     };
   }
   
+  // PUT /api/assistant/chat/:messageId - Edit last user message and regenerate response
+  async handleEditChat(messageId: string, requestBody: ChatEditRequest): Promise<ChatResponse> {
+    if (!requestBody || typeof requestBody !== 'object') {
+      throw new Error('Invalid request body');
+    }
+    if (!requestBody.message || typeof requestBody.message !== 'string') {
+      throw new Error('Message is required and must be a string');
+    }
+    if (!requestBody.conversationId || typeof requestBody.conversationId !== 'string') {
+      throw new Error('conversationId is required and must be a string');
+    }
+
+    const { response, conversationId } = await this.assistant.editLastUserMessageAndRegenerate(
+      requestBody.conversationId,
+      messageId,
+      requestBody.message
+    );
+
+    const aiResponse: ChatResponse = {
+      id: uuidv4(),
+      content: response,
+      role: 'assistant',
+      timestamp: new Date().toISOString(),
+      conversationId
+    };
+    return aiResponse;
+  }
 
 }
 

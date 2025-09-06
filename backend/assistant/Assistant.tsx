@@ -83,6 +83,48 @@ export class Assistant {
     await this.conversationRepository.updateConversationName(conversationId, name);
   }
 
+  async editLastUserMessageAndRegenerate(
+    conversationId: string,
+    messageId: string,
+    newContent: string
+  ): Promise<{ response: string; conversationId: string }> {
+    const messages = await this.conversationRepository.getConversationMessages(conversationId);
+    if (!messages || messages.length === 0) {
+      throw new Error('Conversation is empty');
+    }
+    const lastUserMessageIndex = [...messages]
+      .map((m, idx) => ({ m, idx }))
+      .filter(({ m }) => m.role === 'user')
+      .map(({ idx }) => idx)
+      .pop();
+    if (lastUserMessageIndex === undefined) {
+      throw new Error('No user message to edit');
+    }
+    const lastUserMessage = messages[lastUserMessageIndex];
+    if (lastUserMessage.id !== messageId) {
+      throw new Error('Only the last user message can be edited');
+    }
+
+    await this.conversationRepository.updateMessage(messageId, newContent);
+    await this.conversationRepository.deleteMessagesAfter(conversationId, messageId);
+
+    const truncatedMessages = await this.conversationRepository.getConversationMessages(conversationId);
+    const openAIMessages: ConversationMessage[] = truncatedMessages.map(msg => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+    const response = await this.sendConversation(openAIMessages);
+
+    const assistantChatMessage: ChatMessage = {
+      id: uuidv4(),
+      content: response,
+      role: 'assistant',
+      timestamp: new Date().toISOString(),
+    };
+    await this.conversationRepository.addMessage(conversationId, assistantChatMessage);
+
+    return { response, conversationId };
+  }
 }
 
 if (require.main === module) {
