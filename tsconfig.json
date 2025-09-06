@@ -12,9 +12,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@webapp2/*": ["./webapp2/*"],
       "@webapp/*": ["./webapp/*"],
       "@backend/*": ["./backend/*"]
     },
-    "types": ["bun", "react", "react-dom"]
+    "types": ["bun", "react", "react-dom"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
   }
 }

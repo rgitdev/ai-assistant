@@ -3,6 +3,7 @@ import "./styles/markdown.css";
 import "./styles/menu.css";
 import React, { useState } from 'react';
 import { ChatApp } from "./components/ChatApp";
+import { ChatProvider } from "./context/ChatContext";
 import { Menu } from "./components/Menu/Menu";
 import { About } from "./components/About";
 import { ConversationSelection } from "./components/ConversationSelection";
@@ -37,11 +38,13 @@ export function App() {
         
         <div className="app-content">
           {currentView === 'chat' ? (
-            <ChatApp 
+            <ChatProvider
               selectedConversationId={selectedConversationId}
               selectedConversationName={selectedConversationName}
               onConversationChange={handleConversationChange}
-            />
+            >
+              <ChatApp />
+            </ChatProvider>
           ) : currentView === 'history' ? (
             <ConversationSelection 
               selectedConversationId={selectedConversationId}

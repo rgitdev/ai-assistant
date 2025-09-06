@@ -1,4 +1,5 @@
 import React from 'react';
+import { GeminiChatMessage } from './GeminiChatMessageComponent';
 
 export interface Message {
   id: string;
@@ -18,52 +19,44 @@ export const ChatMessage: React.FC<ChatMessageProps> = (props: ChatMessageProps)
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
 
-  return (
-    <div className={`chat-message ${isUser ? 'user-message' : 'assistant-message'}`}>
-      <div className="message-avatar">
-        {isUser ? (
-          <div className="user-avatar">👤</div>
-        ) : (
-          <div className="assistant-avatar">🤖</div>
-        )}
+  // Use GeminiChatMessage for a modern look
+  if (children) {
+    return (
+      <div className="message-text-content">
+        {children}
       </div>
-      
-      <div className="message-content">
-        <div className="message-header">
-          <span className="message-role">
-            {isUser ? 'You' : 'Assistant'}
-          </span>
-          <span className="message-timestamp">
-            {message.timestamp.toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </span>
-        </div>
-        
-        <div className="message-text">
-          {message.isTyping ? (
+    );
+  }
+
+  if (message.isTyping) {
+    return (
+      <div className="flex items-start gap-4 p-4 my-2">
+        <div className="flex-shrink-0 w-8 h-8">
+          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
             <div className="typing-dots">
               <span></span>
               <span></span>
               <span></span>
             </div>
-          ) : (
-            children ? (
-              <div className="message-text-content">{children}</div>
-            ) : (
-              <div className="message-text-content">
-                {message.content.split('\n').map((line, index) => (
-                  <React.Fragment key={index}>
-                    {line}
-                    {index < message.content.split('\n').length - 1 && <br />}
-                  </React.Fragment>
-                ))}
-              </div>
-            )
-          )}
+          </div>
+        </div>
+        <div className="flex-grow">
+          <p className="font-bold text-gray-800 dark:text-gray-200 mb-2">Assistant</p>
+          <div className="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <GeminiChatMessage
+      sender={isUser ? 'You' : 'Assistant'}
+      message={message.content}
+      role={message.role}
+    />
   );
 };

@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ChatMessage, Message } from './ChatMessage';
+import { ChatUserMessage } from './ChatUserMessage';
 import { ChatMarkdownMessage } from './ChatMarkdownMessage';
 import { chatConfig } from '../config/chatConfig';
 
@@ -7,14 +8,6 @@ interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
   markdownSupported?: boolean;
-  onStartEditLast?: (messageId: string, content: string) => void;
-  onResendLast?: (messageId: string, content: string) => void;
-  editingLast?: boolean;
-  editingValue?: string;
-  onEditingChange?: (value: string) => void;
-  onSubmitEdit?: () => void;
-  onCancelEdit?: () => void;
-  busy?: boolean;
 }
 
 export const MessageList: React.FC<MessageListProps> = (props: MessageListProps) => {
@@ -22,14 +15,6 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
     messages,
     isLoading = false,
     markdownSupported = false,
-    onStartEditLast,
-    onResendLast,
-    editingLast = false,
-    editingValue = '',
-    onEditingChange,
-    onSubmitEdit,
-    onCancelEdit,
-    busy = false,
   } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -40,14 +25,6 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
-
-  const lastUserIndex = useMemo<number>(() => {
-    const indices = messages
-      .map((m: Message, idx: number) => ({ m, idx }))
-      .filter(({ m }: { m: Message; idx: number }) => m.role === 'user')
-      .map(({ idx }: { m: Message; idx: number }) => idx);
-    return indices.length > 0 ? indices[indices.length - 1] : -1;
-  }, [messages]);
 
   if (messages.length === 0 && !isLoading) {
     return (
@@ -64,119 +41,19 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
   return (
     <div className="message-list">
       <div className="messages-container">
-        {messages.map((message: Message, idx: number) => {
-          // Use ChatMarkdownMessage for assistant messages when markdown is supported
-          // Use ChatMessage for user messages or when markdown is disabled
-          const isLastUser = idx === lastUserIndex;
-          if (markdownSupported && message.role === 'assistant' && chatConfig.enableMarkdownForAssistant) {
-            return <ChatMarkdownMessage key={message.id} message={message} />;
-          } else if (markdownSupported && message.role === 'user' && chatConfig.enableMarkdownForUser) {
-            if (isLastUser && editingLast) {
-              return (
-                <ChatMarkdownMessage key={message.id} message={message}>
-                  <div className="inline-edit">
-                    <textarea
-                      className="inline-edit-textarea"
-                      value={editingValue}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onEditingChange?.(e.target.value)}
-                      onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          onSubmitEdit?.();
-                        } else if (e.key === 'Escape') {
-                          e.preventDefault();
-                          onCancelEdit?.();
-                        }
-                      }}
-                      rows={3}
-                    />
-                    <div className="inline-edit-actions">
-                      <button className="message-action-button secondary" onClick={onCancelEdit} disabled={busy}>Cancel</button>
-                      <button className="message-action-button primary" onClick={onSubmitEdit} disabled={busy || !editingValue.trim()}>Update</button>
-                    </div>
-                  </div>
-                </ChatMarkdownMessage>
-              );
-            }
-            return (
-              <>
-                <ChatMarkdownMessage key={message.id} message={message} />
-                {isLastUser && (
-                  <div className="message-actions user">
-                    <button
-                      className="message-action-button"
-                      title="Edit last message"
-                      onClick={() => onStartEditLast?.(message.id, message.content)}
-                      disabled={busy}
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      className="message-action-button"
-                      title="Regenerate response"
-                      onClick={() => onResendLast?.(message.id, message.content)}
-                      disabled={busy}
-                    >
-                      ↻ Regenerate
-                    </button>
-                  </div>
-                )}
-              </>
-            );
-          } else {
-            if (isLastUser && editingLast) {
-              return (
-                <ChatMessage key={message.id} message={message}>
-                  <div className="inline-edit">
-                    <textarea
-                      className="inline-edit-textarea"
-                      value={editingValue}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onEditingChange?.(e.target.value)}
-                      onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          onSubmitEdit?.();
-                        } else if (e.key === 'Escape') {
-                          e.preventDefault();
-                          onCancelEdit?.();
-                        }
-                      }}
-                      rows={3}
-                    />
-                    <div className="inline-edit-actions">
-                      <button className="message-action-button secondary" onClick={onCancelEdit} disabled={busy}>Cancel</button>
-                      <button className="message-action-button primary" onClick={onSubmitEdit} disabled={busy || !editingValue.trim()}>Update</button>
-                    </div>
-                  </div>
-                </ChatMessage>
-              );
-            }
-            return (
-              <>
-                <ChatMessage key={message.id} message={message} />
-                {isLastUser && (
-                  <div className="message-actions user">
-                    <button
-                      className="message-action-button"
-                      title="Edit last message"
-                      onClick={() => onStartEditLast?.(message.id, message.content)}
-                      disabled={busy}
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      className="message-action-button"
-                      title="Regenerate response"
-                      onClick={() => onResendLast?.(message.id, message.content)}
-                      disabled={busy}
-                    >
-                      ↻ Regenerate
-                    </button>
-                  </div>
-                )}
-              </>
-            );
+        {messages.map((message: Message) => {
+          // Use ChatUserMessage for user messages (handles its own editing)
+          if (message.role === 'user') {
+            return <ChatUserMessage key={message.id} message={message} />;
           }
+          
+          // Use ChatMarkdownMessage for assistant messages when markdown is supported
+          if (markdownSupported && chatConfig.enableMarkdownForAssistant) {
+            return <ChatMarkdownMessage key={message.id} message={message} />;
+          }
+          
+          // Fallback to regular ChatMessage for assistant messages
+          return <ChatMessage key={message.id} message={message} />;
         })}
         
         {isLoading && (
