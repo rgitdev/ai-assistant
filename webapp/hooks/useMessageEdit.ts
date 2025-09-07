@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
-import { useChatContext } from '../context/ChatContext';
 import { ChatService } from '../services/ChatService';
 
 interface UseMessageEditProps {
   messageId: string;
   initialContent: string;
+  conversationId: string | null;
+  onMessagesReload: (conversationId: string) => Promise<void>;
+  onError?: (errorMessage: string) => void;
 }
 
 interface UseMessageEditReturn {
@@ -20,13 +22,15 @@ interface UseMessageEditReturn {
 
 export const useMessageEdit = ({ 
   messageId, 
-  initialContent 
+  initialContent,
+  conversationId,
+  onMessagesReload,
+  onError
 }: UseMessageEditProps): UseMessageEditReturn => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState(initialContent);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { conversationId, loadConversationMessages } = useChatContext();
   const chatService = new ChatService();
 
   const startEdit = useCallback(() => {
@@ -44,10 +48,16 @@ export const useMessageEdit = ({
   }, []);
 
   const submitEdit = useCallback(async () => {
-    if (!conversationId || !isEditing) return;
+    console.log('submitEdit called', { conversationId, isEditing, messageId, editingValue });
+    
+    if (!isEditing) {
+      console.log('Not in editing mode, skipping');
+      return;
+    }
     
     try {
       setIsLoading(true);
+      console.log('Calling editMessage API...');
       
       // Call the edit message API
       const { content: aiResponse } = await chatService.editMessage(
@@ -56,19 +66,28 @@ export const useMessageEdit = ({
         conversationId
       );
       
+      console.log('Edit message API response:', aiResponse);
+      
       // Reload the conversation to get updated messages
       if (conversationId) {
-        await loadConversationMessages(conversationId);
+        console.log('Reloading conversation messages...');
+        await onMessagesReload(conversationId);
+        console.log('Messages reloaded successfully');
+      } else {
+        console.log('No conversationId, skipping message reload');
       }
       
     } catch (error) {
       console.error('Error editing message:', error);
-      // Could add error handling here - maybe show a toast or revert the edit
+      const errorMessage = chatService.createErrorMessage(
+        "I'm sorry, I encountered an error while editing your message. Please try again."
+      );
+      onError?.(errorMessage.content);
     } finally {
       setIsLoading(false);
       setIsEditing(false);
     }
-  }, [conversationId, messageId, editingValue, isEditing, chatService, loadConversationMessages]);
+  }, [conversationId, messageId, editingValue, isEditing, chatService, onMessagesReload, onError]);
 
   const resendMessage = useCallback(async () => {
     if (!conversationId) return;
@@ -84,7 +103,7 @@ export const useMessageEdit = ({
       
       // Reload the conversation to get updated messages
       if (conversationId) {
-        await loadConversationMessages(conversationId);
+        await onMessagesReload(conversationId);
       }
       
     } catch (error) {
@@ -92,7 +111,7 @@ export const useMessageEdit = ({
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, messageId, editingValue, chatService, loadConversationMessages]);
+  }, [conversationId, messageId, editingValue, chatService, onMessagesReload]);
 
   return {
     isEditing,

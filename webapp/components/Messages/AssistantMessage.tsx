@@ -3,7 +3,7 @@ import { AssistantAvatar } from '../Icons/AssistantAvatar';
 import { CopyIcon } from '../Icons/CopyIcon';
 import { ThumbsUpIcon } from '../Icons/ThumbsUpIcon';
 import { ThumbsDownIcon } from '../Icons/ThumbsDownIcon';
-import { Message } from './Message';
+import { Message } from '../../types/Message';
 
 interface AssistantMessageProps {
   message: Message;

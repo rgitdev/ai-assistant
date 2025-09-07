@@ -7,6 +7,9 @@ interface ChatContainerProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isLoading?: boolean;
+  conversationId: string | null;
+  onMessagesReload: (conversationId: string) => Promise<void>;
+  onError?: (errorMessage: string) => void;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainerProps) => {
@@ -14,6 +17,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainer
     messages,
     onSendMessage,
     isLoading = false,
+    conversationId,
+    onMessagesReload,
+    onError,
   } = props;
   
   return (
@@ -22,6 +28,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainer
         <MessageList 
           messages={messages}
           isLoading={isLoading}
+          conversationId={conversationId}
+          onMessagesReload={onMessagesReload}
+          onError={onError}
         />
       </div>
       

@@ -4,12 +4,18 @@ import { UserMessage, AssistantMessage, Message } from './Messages';
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
+  conversationId: string | null;
+  onMessagesReload: (conversationId: string) => Promise<void>;
+  onError?: (errorMessage: string) => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = (props: MessageListProps) => {
   const {
     messages,
     isLoading = false,
+    conversationId,
+    onMessagesReload,
+    onError,
   } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +44,15 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
       <div className="messages-container">
         {messages.map((message: Message) => {
           if (message.role === 'user') {
-            return <UserMessage key={message.id} message={message} />;
+            return (
+              <UserMessage 
+                key={message.id} 
+                message={message}
+                conversationId={conversationId}
+                onMessagesReload={onMessagesReload}
+                onError={onError}
+              />
+            );
           }
           
           return <AssistantMessage key={message.id} message={message} />;

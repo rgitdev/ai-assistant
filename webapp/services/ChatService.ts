@@ -38,12 +38,12 @@ export class ChatService {
   async editMessage(
     messageId: string, 
     message: string, 
-    conversationId: string
+    conversationId: string | null
   ): Promise<EditMessageResult> {
     try {
       const data = await assistantClient.editLastMessage(messageId, { 
         message, 
-        conversationId 
+        conversationId: conversationId || undefined 
       });
       return {
         content: data.content,
@@ -57,12 +57,12 @@ export class ChatService {
   async resendMessage(
     messageId: string, 
     message: string, 
-    conversationId: string
+    conversationId: string | null
   ): Promise<EditMessageResult> {
     try {
       const data = await assistantClient.editLastMessage(messageId, { 
         message, 
-        conversationId 
+        conversationId: conversationId || undefined 
       });
       return {
         content: data.content,

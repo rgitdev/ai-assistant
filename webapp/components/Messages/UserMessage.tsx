@@ -5,10 +5,13 @@ import { Message } from '../../types/Message';
 
 interface UserMessageProps {
   message: Message;
+  conversationId: string | null;
+  onMessagesReload: (conversationId: string) => Promise<void>;
+  onError?: (errorMessage: string) => void;
 }
 
 
-export const UserMessage: React.FC<UserMessageProps> = ({ message }) => {
+export const UserMessage: React.FC<UserMessageProps> = ({ message, conversationId, onMessagesReload, onError }) => {
   const {
     isEditing,
     editingValue,
@@ -21,6 +24,9 @@ export const UserMessage: React.FC<UserMessageProps> = ({ message }) => {
   } = useMessageEdit({
     messageId: message.id,
     initialContent: message.content,
+    conversationId,
+    onMessagesReload,
+    onError,
   });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

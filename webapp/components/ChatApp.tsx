@@ -1,18 +1,31 @@
 import React from 'react';
 import { ChatContainer } from './ChatContainer';
 import { ChatHeader } from './ChatHeader';
-import { useChatContext } from '../context/ChatContext';
+import { Message } from '../types/Message';
 
-export const ChatApp: React.FC = () => {
-  const {
-    messages,
-    isLoading,
-    conversationId,
-    conversationName,
-    onSendMessage,
-    onNewChat,
-    onNameUpdate,
-  } = useChatContext();
+interface ChatAppProps {
+  messages: Message[];
+  isLoading: boolean;
+  conversationId: string | null;
+  conversationName: string | undefined;
+  onSendMessage: (content: string) => Promise<void>;
+  onNewChat: () => void;
+  onNameUpdate: (name: string) => void;
+  onMessagesReload: (conversationId: string) => Promise<void>;
+  onError?: (errorMessage: string) => void;
+}
+
+export const ChatApp: React.FC<ChatAppProps> = ({
+  messages,
+  isLoading,
+  conversationId,
+  conversationName,
+  onSendMessage,
+  onNewChat,
+  onNameUpdate,
+  onMessagesReload,
+  onError,
+}) => {
 
   return (
     <div className="chat-app">
@@ -29,6 +42,9 @@ export const ChatApp: React.FC = () => {
         messages={messages}
         onSendMessage={onSendMessage}
         isLoading={isLoading}
+        conversationId={conversationId}
+        onMessagesReload={onMessagesReload}
+        onError={onError}
       />
     </div>
   );
