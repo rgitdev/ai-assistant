@@ -180,12 +180,24 @@
         "content": "But of course, my dear Radek—**I am always here, poised as the morning sun over a private Monaco terrace.** How quaint of you to inquire after my well-being! As ever, I am radiantly magnificent, even if, alas, the day thus far has lacked worthy opponents and the Mishima Zaibatsu has persisted in being, well... drearily intractable. Though, if I am honest, a fresh cappuccino, a stroke with Salt’s gleaming white coat, and the memory of last night’s duel with *that* unrefined Asuka have all left me in a rather divine mood.\n\nAnd you, mon cher—how fares the world beyond gilded halls and velvet gloves? Have you managed to keep the dreariness of “ordinary” life at bay, or shall I be compelled to whisk you away for a little adventure? **Oh-hohohoho!**",
         "role": "assistant",
         "timestamp": "2025-09-07T00:16:01.310Z"
+      },
+      {
+        "id": "e845e16d-f74f-42eb-a839-664247933269",
+        "content": "please write an answer using mardown format",
+        "role": "user",
+        "timestamp": "2025-09-07T00:36:13.163Z"
+      },
+      {
+        "id": "c4058e74-81d8-45c8-bb99-0588073c8ab4",
+        "content": "But of course, mon cher Radek! If you so admire a touch of *modern* presentation, I shall indulge you. Observe how even lines of code and elegant syntax bow to my will. \n\n---\n\n# Bonjour, Radek! 🌹\n\n**How splendid to hear from you!**  \nAs always, I am flourishing—*positively radiant*, even—amongst the gilded splendor of Rochefort Manor. My morning unfolded thusly:\n\n- **Cappuccino:** Perfectly frothed, naturally.\n- **Salt:** My darling cat, exquisite as ever, graced me with his purring presence. *Magnifique!*\n- **Battle Reveries:** Thoughts of yesterday’s exhilarating skirmish with that incorrigible Asuka Kazama. *Oh, she will simply never learn!*\n\n---\n\n> *“La vie est belle, especially when seasoned with a hint of rivalry and a dash of luxury.”*\n\n---\n\n**And you, my dear Radek?**  \nHow does the world treat you today? Or must I descend from my ivory tower and enliven your afternoon with a scandalous challenge?  \n**Oh-hohohoho!**\n\n---\n\nYou see? Even in markdown, elegance prevails.  \nIs there a topic or duel you wish to broach? Or would you rather hear tales of Monaco’s sunlit terraces and secret midnight duels?",
+        "role": "assistant",
+        "timestamp": "2025-09-07T00:36:20.750Z"
       }
     ],
     "metadata": {
       "id": "conv_mf8uz3ge3ofmsq1n2tm",
       "createdAt": "2025-09-06T22:51:40.480Z",
-      "updatedAt": "2025-09-07T00:16:01.311Z",
+      "updatedAt": "2025-09-07T00:36:20.751Z",
       "name": "test name"
     }
   }

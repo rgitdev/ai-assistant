@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChatContainer } from './ChatContainer';
 import { ChatHeader } from './ChatHeader';
-import { chatConfig } from '../config/chatConfig';
 import { useChatContext } from '../context/ChatContext';
 
 export const ChatApp: React.FC = () => {
@@ -30,7 +29,6 @@ export const ChatApp: React.FC = () => {
         messages={messages}
         onSendMessage={onSendMessage}
         isLoading={isLoading}
-        markdownSupported={chatConfig.markdownSupported}
       />
     </div>
   );

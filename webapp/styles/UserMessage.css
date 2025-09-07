@@ -177,13 +177,13 @@
   }
 
   .user-message__text {
-    color: #d1d5db;
+    color: var(--color-text-primary);
   }
 
   .user-message__edit-textarea {
-    background-color: #374151;
+    /* background-color: #374151;
     border-color: #4b5563;
-    color: #f9fafb;
+    color: #f9fafb; */
   }
 
   .user-message__edit-textarea:focus {
