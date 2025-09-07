@@ -8,10 +8,12 @@ interface UserMessageProps {
   conversationId: string | null;
   onMessagesReload: (conversationId: string) => Promise<void>;
   onError?: (errorMessage: string) => void;
+  onNewChat?: () => void;
+  onSendMessage?: (message: string) => Promise<void>;
 }
 
 
-export const UserMessage: React.FC<UserMessageProps> = ({ message, conversationId, onMessagesReload, onError }) => {
+export const UserMessage: React.FC<UserMessageProps> = ({ message, conversationId, onMessagesReload, onError, onNewChat, onSendMessage }) => {
   const {
     isEditing,
     editingValue,
@@ -27,6 +29,8 @@ export const UserMessage: React.FC<UserMessageProps> = ({ message, conversationI
     conversationId,
     onMessagesReload,
     onError,
+    onNewChat,
+    onSendMessage,
   });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

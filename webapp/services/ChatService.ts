@@ -1,10 +1,10 @@
 import { assistantClient } from '../client/AssistantClient';
 import { conversationClient } from '../client/ConversationClient';
-import { Message } from '../components/Messages';
+import { Message } from '../types/Message';
 
 export interface SendMessageResult {
   content: string;
-  conversationId: string;
+  conversationId: string; 
 }
 
 export interface EditMessageResult {
@@ -38,12 +38,12 @@ export class ChatService {
   async editMessage(
     messageId: string, 
     message: string, 
-    conversationId: string | null
+    conversationId: string
   ): Promise<EditMessageResult> {
     try {
       const data = await assistantClient.editLastMessage(messageId, { 
         message, 
-        conversationId: conversationId || undefined 
+        conversationId 
       });
       return {
         content: data.content,
@@ -57,12 +57,12 @@ export class ChatService {
   async resendMessage(
     messageId: string, 
     message: string, 
-    conversationId: string | null
+    conversationId: string
   ): Promise<EditMessageResult> {
     try {
       const data = await assistantClient.editLastMessage(messageId, { 
         message, 
-        conversationId: conversationId || undefined 
+        conversationId 
       });
       return {
         content: data.content,

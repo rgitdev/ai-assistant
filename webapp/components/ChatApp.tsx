@@ -45,6 +45,7 @@ export const ChatApp: React.FC<ChatAppProps> = ({
         conversationId={conversationId}
         onMessagesReload={onMessagesReload}
         onError={onError}
+        onNewChat={onNewChat}
       />
     </div>
   );

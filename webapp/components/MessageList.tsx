@@ -7,6 +7,8 @@ interface MessageListProps {
   conversationId: string | null;
   onMessagesReload: (conversationId: string) => Promise<void>;
   onError?: (errorMessage: string) => void;
+  onNewChat?: () => void;
+  onSendMessage?: (message: string) => Promise<void>;
 }
 
 export const MessageList: React.FC<MessageListProps> = (props: MessageListProps) => {
@@ -16,6 +18,8 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
     conversationId,
     onMessagesReload,
     onError,
+    onNewChat,
+    onSendMessage,
   } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +55,8 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
                 conversationId={conversationId}
                 onMessagesReload={onMessagesReload}
                 onError={onError}
+                onNewChat={onNewChat}
+                onSendMessage={onSendMessage}
               />
             );
           }

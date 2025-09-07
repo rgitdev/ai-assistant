@@ -7,6 +7,8 @@ interface UseMessageEditProps {
   conversationId: string | null;
   onMessagesReload: (conversationId: string) => Promise<void>;
   onError?: (errorMessage: string) => void;
+  onNewChat?: () => void;
+  onSendMessage?: (message: string) => Promise<void>;
 }
 
 interface UseMessageEditReturn {
@@ -25,7 +27,9 @@ export const useMessageEdit = ({
   initialContent,
   conversationId,
   onMessagesReload,
-  onError
+  onError,
+  onNewChat,
+  onSendMessage
 }: UseMessageEditProps): UseMessageEditReturn => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState(initialContent);
@@ -48,33 +52,19 @@ export const useMessageEdit = ({
   }, []);
 
   const submitEdit = useCallback(async () => {
-    console.log('submitEdit called', { conversationId, isEditing, messageId, editingValue });
-    
-    if (!isEditing) {
-      console.log('Not in editing mode, skipping');
-      return;
-    }
+    if (!isEditing) return;
     
     try {
       setIsLoading(true);
-      console.log('Calling editMessage API...');
       
-      // Call the edit message API
-      const { content: aiResponse } = await chatService.editMessage(
-        messageId, 
-        editingValue, 
-        conversationId
-      );
-      
-      console.log('Edit message API response:', aiResponse);
-      
-      // Reload the conversation to get updated messages
-      if (conversationId) {
-        console.log('Reloading conversation messages...');
-        await onMessagesReload(conversationId);
-        console.log('Messages reloaded successfully');
+      if (!conversationId) {
+        // New chat scenario: clear state and send new message
+        onNewChat?.();
+        await onSendMessage?.(editingValue);
       } else {
-        console.log('No conversationId, skipping message reload');
+        // Existing conversation: use edit message API
+        await chatService.editMessage(messageId, editingValue, conversationId);
+        await onMessagesReload(conversationId);
       }
       
     } catch (error) {
@@ -87,7 +77,7 @@ export const useMessageEdit = ({
       setIsLoading(false);
       setIsEditing(false);
     }
-  }, [conversationId, messageId, editingValue, isEditing, chatService, onMessagesReload, onError]);
+  }, [conversationId, messageId, editingValue, isEditing, chatService, onMessagesReload, onError, onNewChat, onSendMessage]);
 
   const resendMessage = useCallback(async () => {
     if (!conversationId) return;

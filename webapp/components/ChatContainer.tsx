@@ -10,6 +10,7 @@ interface ChatContainerProps {
   conversationId: string | null;
   onMessagesReload: (conversationId: string) => Promise<void>;
   onError?: (errorMessage: string) => void;
+  onNewChat?: () => void;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainerProps) => {
@@ -20,6 +21,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainer
     conversationId,
     onMessagesReload,
     onError,
+    onNewChat,
   } = props;
   
   return (
@@ -31,6 +33,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainer
           conversationId={conversationId}
           onMessagesReload={onMessagesReload}
           onError={onError}
+          onNewChat={onNewChat}
+          onSendMessage={onSendMessage}
         />
       </div>
       
