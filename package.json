@@ -10,15 +10,21 @@
     "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
     "start": "NODE_ENV=production bun src/index.tsx",
     "webapp": "bun --hot webapp/index.tsx",
+    "frontend": "bun --hot frontend/src/index.tsx",
+    "webapp2": "bun --hot webapp2/src/server.tsx",
     "backend": "bun --hot backend/index.tsx"
   },
   "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.5",
+    "framer-motion": "^12.23.12",
     "langfuse": "^3.38.5",
+    "lucide-react": "^0.542.0",
     "openai": "^5.17.0",
     "react": "^19",
     "react-dom": "^19",
-    "uuid": "^11.1.0"
+    "uuid": "^12.0.0"
   },
   "devDependencies": {
     "@types/react": "^19",

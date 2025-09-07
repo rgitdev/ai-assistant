@@ -48,7 +48,8 @@ export class ConversationDatabaseRepository implements IConversationRepository {
 
   async getConversationMessages(conversationId: string): Promise<ChatMessage[]> {
     const messages = await this.db.getMessagesByConversationId(conversationId);
-    return messages.map(msg => ({
+    const sorted = messages.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    return sorted.map(msg => ({
       id: msg.uuid,
       content: msg.content,
       role: msg.role as 'user' | 'assistant',
@@ -58,5 +59,22 @@ export class ConversationDatabaseRepository implements IConversationRepository {
 
   async updateConversationName(conversationId: string, name: string): Promise<void> {
     throw new Error('updateConversationName not implemented for database repository');
+  }
+
+  async updateMessage(messageId: string, content: string): Promise<void> {
+    await this.db.updateMessage(messageId, content);
+  }
+
+  async deleteMessagesAfter(conversationId: string, messageId: string): Promise<void> {
+    const all = await this.db.getMessagesByConversationId(conversationId);
+    const sorted = all.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    const index = sorted.findIndex(m => m.uuid === messageId);
+    if (index === -1) {
+      throw new Error('Message not found');
+    }
+    const toDelete = sorted.slice(index + 1);
+    for (const msg of toDelete) {
+      await this.db.deleteMessage(msg.uuid);
+    }
   }
 }

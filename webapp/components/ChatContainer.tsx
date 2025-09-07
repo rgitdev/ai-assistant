@@ -1,33 +1,34 @@
 import React from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import { Message } from './ChatMessage';
+import { Message } from './Messages';
 
 interface ChatContainerProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isLoading?: boolean;
-  disabled?: boolean;
-  markdownSupported?: boolean;
 }
 
-export const ChatContainer: React.FC<ChatContainerProps> = ({
-  messages,
-  onSendMessage,
-  isLoading = false,
-  disabled = false,
-  markdownSupported = false
-}) => {
+export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainerProps) => {
+  const {
+    messages,
+    onSendMessage,
+    isLoading = false,
+  } = props;
+  
   return (
     <div className="chat-container">
       <div className="chat-body">
-        <MessageList messages={messages} isLoading={isLoading} markdownSupported={markdownSupported} />
+        <MessageList 
+          messages={messages}
+          isLoading={isLoading}
+        />
       </div>
       
       <div className="chat-footer">
         <ChatInput 
           onSendMessage={onSendMessage}
-          disabled={disabled || isLoading}
+          disabled={isLoading}
           placeholder={isLoading ? "Please wait for the response..." : "Type your message here..."}
         />
       </div>
