@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Message } from '../components/ChatMessage';
+import { Message } from '../components/Messages';
 import { ChatService } from '../services/ChatService';
 
 interface UseMessagesProps {

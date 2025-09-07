@@ -8,17 +8,28 @@ interface ChatInterfaceProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
+  onEditMessage?: (messageId: string, newContent: string) => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoading, onSendMessage }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  messages, 
+  isLoading, 
+  onSendMessage, 
+  onEditMessage 
+}) => {
   return (
     <div className="chat-container">
       <div className="message-list">
-        {messages.map((msg, index) => (
+        {messages.map((msg) => (
           msg.role === 'user' ? (
-            <UserMessage key={index} message={msg} />
+            <UserMessage 
+              key={msg.id} 
+              message={msg}
+              isLoading={isLoading}
+              onEditMessage={onEditMessage}
+            />
           ) : (
-            <AssistantMessage key={index} message={msg} />
+            <AssistantMessage key={msg.id} message={msg} />
           )
         ))}
         {isLoading && (

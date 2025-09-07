@@ -1,20 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { ChatMessage, Message } from './ChatMessage';
-import { ChatUserMessage } from './ChatUserMessage';
-import { ChatMarkdownMessage } from './ChatMarkdownMessage';
-import { chatConfig } from '../config/chatConfig';
+import { UserMessage, AssistantMessage, Message } from './Messages';
 
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
-  markdownSupported?: boolean;
 }
 
 export const MessageList: React.FC<MessageListProps> = (props: MessageListProps) => {
   const {
     messages,
     isLoading = false,
-    markdownSupported = false,
   } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -42,44 +37,23 @@ export const MessageList: React.FC<MessageListProps> = (props: MessageListProps)
     <div className="message-list">
       <div className="messages-container">
         {messages.map((message: Message) => {
-          // Use ChatUserMessage for user messages (handles its own editing)
           if (message.role === 'user') {
-            return <ChatUserMessage key={message.id} message={message} />;
+            return <UserMessage key={message.id} message={message} />;
           }
           
-          // Use ChatMarkdownMessage for assistant messages when markdown is supported
-          if (markdownSupported && chatConfig.enableMarkdownForAssistant) {
-            return <ChatMarkdownMessage key={message.id} message={message} />;
-          }
-          
-          // Fallback to regular ChatMessage for assistant messages
-          return <ChatMessage key={message.id} message={message} />;
+          return <AssistantMessage key={message.id} message={message} />;
         })}
         
         {isLoading && (
-          <div className="chat-message assistant-message">
-            <div className="message-avatar">
-              <div className="assistant-avatar">🤖</div>
-            </div>
-            <div className="message-content">
-              <div className="message-header">
-                <span className="message-role">Assistant</span>
-                <span className="message-timestamp">
-                  {new Date().toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}
-                </span>
-              </div>
-              <div className="message-text">
-                <div className="typing-dots">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AssistantMessage 
+            message={{
+              id: 'typing',
+              content: '',
+              role: 'assistant',
+              timestamp: new Date(),
+              isTyping: true
+            }} 
+          />
         )}
         
         <div ref={messagesEndRef} />

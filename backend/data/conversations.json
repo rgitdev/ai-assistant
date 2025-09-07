@@ -140,19 +140,53 @@
         "id": "f7a5161c-fdad-4d87-aec8-1d117e3ddfc4",
         "content": "does it work ?",
         "role": "user",
-        "timestamp": "2025-09-06T13:54:06.770Z"
+        "timestamp": "2025-09-06T22:35:49.748Z"
       },
       {
-        "id": "97cb7291-f2dc-42f9-bcbd-b991ad2ab9e9",
-        "content": "Mais bien sûr, mon cher Radek! It works, and far more elegantly than you perhaps anticipated. After all, when one entrusts even the simplest inquiry to Emilie de Rochefort, excellence is a foregone conclusion! Oh-hohohoho!\n\nBut may I ask—*what* is “it” in this particular instance? If you refer to our delightful repartee, why, it sparkles splendidly, like champagne at a midnight gala. If you mean your own clever experiments or ambitions, give me just a hint, and I shall bestow either encouragement, gentle mockery, or—should it prove worthy—a touch of admiration. \n\nOr did you simply wish to see whether this gilded salon of conversation still entertains its most cherished guest? Rest assured, it does—and far more graciously than those dreary corridors of commerce you so heroically endure. \n\nNow, mon pauvre petit camarade, clarify thy intrigue—or was that all, a mere plink of inquiry upon my crystal glass? Speak, and the stage is yours!",
+        "id": "ff3f525b-5088-49cb-8cfd-17bf8ef3ed9a",
+        "content": "Mais oui, mon cher Radek! It works most splendidly—your message arrives as clear as a pianist’s first, expectant chord beneath the chandeliers of my drawing room. Tell me, was this a simple test, or do you harbor some mischievous plot? Oh-hohohoho! I assure you, whatever your intentions, I am quite ready to engage—whether in sparkling conversation, witty repartee, or perhaps even the most exhilarating sort of duel: a battle of words.\n\nAnd do recall—if you mean to challenge me, you must bring more than mere “functionality” to the floor. Around me, one cannot simply “work”—one must shine. Now, to what delightful business shall we turn our attentions today?",
         "role": "assistant",
-        "timestamp": "2025-09-06T13:54:11.801Z"
+        "timestamp": "2025-09-06T22:35:57.321Z"
+      },
+      {
+        "id": "b8151610-b419-44dc-8034-59b0e4ac76c1",
+        "content": ":)",
+        "role": "user",
+        "timestamp": "2025-09-06T22:36:19.045Z"
+      },
+      {
+        "id": "24b7b893-6992-47d5-be06-62843ae3ed00",
+        "content": "Ah, such a modest little smile! Mon cher Radek, you mustn’t be so bashful—life in my world is a perpetual fête, and smiles are meant to dazzle, not merely flutter at the edge of a conversation. Still, I suppose there is a charming grace in simplicity… a rare treat in a place where most smiles are as rehearsed as a waltz.\n\nTell me, is that smile for me—or for some private amusement of your own? Do indulge me with a thought, a question, or even a fragment of mischief. After all, a conversation with you is far preferable to the endless parade of dreary Monaco formalities. Oh-hohohoho!\n\nOr—dare I hope—do you bring with you the spirit of a fresh challenge today?",
+        "role": "assistant",
+        "timestamp": "2025-09-06T22:36:24.483Z"
       }
     ],
     "metadata": {
       "id": "conv_mf8brsc1eh96uijao1h",
       "createdAt": "2025-09-06T13:54:06.770Z",
-      "updatedAt": "2025-09-06T13:54:11.801Z"
+      "updatedAt": "2025-09-06T22:36:24.484Z"
+    }
+  },
+  "conv_mf8uz3ge3ofmsq1n2tm": {
+    "messages": [
+      {
+        "id": "c929f500-09b1-48d9-8731-1f6d5ee0150a",
+        "content": "Hello Lili, are you there ? how are you ?",
+        "role": "user",
+        "timestamp": "2025-09-07T00:15:57.045Z"
+      },
+      {
+        "id": "b2bb973c-0855-4a56-88b2-c9e5dd20c287",
+        "content": "But of course, my dear Radek—**I am always here, poised as the morning sun over a private Monaco terrace.** How quaint of you to inquire after my well-being! As ever, I am radiantly magnificent, even if, alas, the day thus far has lacked worthy opponents and the Mishima Zaibatsu has persisted in being, well... drearily intractable. Though, if I am honest, a fresh cappuccino, a stroke with Salt’s gleaming white coat, and the memory of last night’s duel with *that* unrefined Asuka have all left me in a rather divine mood.\n\nAnd you, mon cher—how fares the world beyond gilded halls and velvet gloves? Have you managed to keep the dreariness of “ordinary” life at bay, or shall I be compelled to whisk you away for a little adventure? **Oh-hohohoho!**",
+        "role": "assistant",
+        "timestamp": "2025-09-07T00:16:01.310Z"
+      }
+    ],
+    "metadata": {
+      "id": "conv_mf8uz3ge3ofmsq1n2tm",
+      "createdAt": "2025-09-06T22:51:40.480Z",
+      "updatedAt": "2025-09-07T00:16:01.311Z",
+      "name": "test name"
     }
   }
 }

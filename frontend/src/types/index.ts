@@ -5,6 +5,7 @@ export interface ChatMessage {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  isLastMessage?: boolean;
 }
 
 export interface Conversation {

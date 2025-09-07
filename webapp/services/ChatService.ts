@@ -1,6 +1,6 @@
 import { assistantClient } from '../client/AssistantClient';
 import { conversationClient } from '../client/ConversationClient';
-import { Message } from '../components/ChatMessage';
+import { Message } from '../components/Messages';
 
 export interface SendMessageResult {
   content: string;

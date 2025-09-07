@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useConversation } from '../hooks/useConversation';
 import { useMessages } from '../hooks/useMessages';
-import { Message } from '../components/ChatMessage';
+import { Message } from '../components/Messages';
 
 interface ChatContextType {
   // Core chat state

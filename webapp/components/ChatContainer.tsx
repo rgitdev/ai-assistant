@@ -1,13 +1,12 @@
 import React from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import { Message } from './ChatMessage';
+import { Message } from './Messages';
 
 interface ChatContainerProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isLoading?: boolean;
-  markdownSupported?: boolean;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainerProps) => {
@@ -15,7 +14,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainer
     messages,
     onSendMessage,
     isLoading = false,
-    markdownSupported = false,
   } = props;
   
   return (
@@ -24,7 +22,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = (props: ChatContainer
         <MessageList 
           messages={messages}
           isLoading={isLoading}
-          markdownSupported={markdownSupported}
         />
       </div>
       
