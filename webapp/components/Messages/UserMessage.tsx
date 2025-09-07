@@ -1,14 +1,7 @@
 import React from 'react';
-import { useMessageEdit } from '../hooks/useMessageEdit';
-import { EditIcon } from './Icons/EditIcon';
-
-export interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  isTyping?: boolean;
-}
+import { useMessageEdit } from '../../hooks/useMessageEdit';
+import { EditIcon } from '../Icons/EditIcon';
+import { Message } from '../../types/Message';
 
 interface UserMessageProps {
   message: Message;

@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AssistantAvatar } from './Icons/AssistantAvatar';
-import { CopyIcon } from './Icons/CopyIcon';
-import { ThumbsUpIcon } from './Icons/ThumbsUpIcon';
-import { ThumbsDownIcon } from './Icons/ThumbsDownIcon';
-
-export interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  isTyping?: boolean;
-}
+import { AssistantAvatar } from '../Icons/AssistantAvatar';
+import { CopyIcon } from '../Icons/CopyIcon';
+import { ThumbsUpIcon } from '../Icons/ThumbsUpIcon';
+import { ThumbsDownIcon } from '../Icons/ThumbsDownIcon';
+import { Message } from './Message';
 
 interface AssistantMessageProps {
   message: Message;
