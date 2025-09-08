@@ -50,6 +50,10 @@ export class OpenAIService implements IOpenAIService {
     return this.chatService.sendConversation(systemPrompt, messages, { type: "text" });
   }
 
+  async sendMessages(systemPrompt: string, messages: ConversationMessage[]): Promise<JsonString> {
+    return this.chatService.sendConversation(systemPrompt, messages, { type: "json_object" });
+  }
+
   async generateImage(prompt: string, model: string = OpenAIService.DALL_E_3): Promise<UrlString> {
     return this.imageService.generateImage(prompt, model);
   }

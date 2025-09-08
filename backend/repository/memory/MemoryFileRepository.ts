@@ -2,7 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { IMemoryRepository, MemoryCreateInput, MemoryListFilters, MemorySearchOptions, MemoryUpdateInput } from "./IMemoryRepository";
-import { MemoryRecord } from "../../models/Memory";
+import { MemoryRecord, SourceReference } from "../../models/Memory";
+
 
 interface MemoryStorage {
   [id: string]: MemoryRecord;
@@ -98,6 +99,13 @@ export class MemoryFileRepository implements IMemoryRepository {
       delete storage[id];
       await this.writeStorage(storage);
     }
+  }
+
+  async findMemoryBySource(source: SourceReference): Promise<MemoryRecord | null> {
+    const storage = await this.readStorage();
+    return Object.values(storage)
+    .find(r => r.sources.some(
+      s => s.reference === source.reference && s.type === source.type)) || null;
   }
 
   async listMemories(filters?: MemoryListFilters, pagination?: { offset?: number; limit?: number; sortBy?: "createdAt" | "updatedAt" | "importance"; sortOrder?: "asc" | "desc"; }): Promise<MemoryRecord[]> {
