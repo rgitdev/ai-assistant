@@ -93,10 +93,11 @@ export class MemoryService {
       reference: conversationId,
     });
     
+    console.log("Checking previous memory for conversation: ", conversationId, prevRecord?.id);
     const record = await this.memoryRepository.createMemory(createInput);
     if (prevRecord) {
       console.log("Deleting previous memory", prevRecord.id);
-      await this.memoryRepository.deleteMemory(prevRecord.id);
+     // await this.memoryRepository.deleteMemory(prevRecord.id);
     }
     return record;
   }
@@ -109,7 +110,7 @@ export class MemoryService {
     }
     return {
       role: "assistant",
-      content: `Latest memory: ${memory.content}`,
+      content: `Latest memory: ${memory.title}\n\n${memory.content}`,
     };
   }
 }

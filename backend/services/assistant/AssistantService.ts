@@ -30,11 +30,11 @@ export class AssistantService {
   async sendConversation(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
 
-    messages = await this.addMemoryMessages(messages);
+    const enhancedMessages = await this.addMemoryMessages(messages);
 
-    console.log("Adding memory messages to conversation:", messages.length, "messages");
+    console.log("Adding memory messages to conversation:", enhancedMessages.length, "messages");
 
-    const response = await this.openAIService.sendChatMessages(systemPrompt, messages);
+    const response = await this.openAIService.sendChatMessages(systemPrompt, enhancedMessages);
     return response;
   }
 
@@ -42,7 +42,7 @@ export class AssistantService {
 
     const lastMemory = await this.memoryService.getLastMemoryAsMessage();
     if (lastMemory) {
-      messages.unshift(lastMemory);
+      return [lastMemory, ...messages];
     }
     return messages;
 

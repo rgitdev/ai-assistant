@@ -28,5 +28,7 @@ Memory: Describe the memory from your own perspective, in the first person. Writ
 - DO NOT transcribe the conversation. Recount the memory and synthesize its meaning.
 - Be Concise but Detailed: Keep the memory focused and to the point. Capture the essential details—facts, feelings, and outcomes—without unnecessary words. - Every sentence should contribute meaningfully to the memory.
 - Write in a personal, reflective, first-person narrative style (e.g., "I remember feeling...", "He told me that...", "We decided to...").
-- The final output should be a self-contained memory, understandable as if it were a page from my own journal.
-`;
+- The final output should be a self-contained memory, understandable as if it were a page from my own journal.`;
+
+
+//- IMPORTANT: Information Shared: What specific information, details, or data did the user provide to me? Capture any facts, preferences, experiences, or knowledge user shared that should be remembered for future reference.
