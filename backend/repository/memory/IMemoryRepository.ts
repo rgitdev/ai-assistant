@@ -56,7 +56,8 @@ export interface IMemoryRepository {
   getMemory(id: string): Promise<MemoryRecord | null>;
   updateMemory(id: string, updates: MemoryUpdateInput): Promise<MemoryRecord>;
   deleteMemory(id: string): Promise<void>;
-  findMemoryBySource(source: SourceReference): Promise<MemoryRecord | null>;
+  findMemoriesByMetadata(metadata: Record<string, any>): Promise<MemoryRecord[]>;
+  findMemoryBySource(source: SourceReference): Promise<MemoryRecord[]>;
   listMemories(filters?: MemoryListFilters, pagination?: PaginationOptions): Promise<MemoryRecord[]>;
   searchMemories(query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]>;
 }

@@ -40,7 +40,7 @@ export class AssistantService {
 
   async addMemoryMessages(messages: ConversationMessage[]): Promise<ConversationMessage[]> {
 
-    const lastMemory = await this.memoryService.getLastMemoryAsMessage();
+    const lastMemory = await this.memoryService.getMemoriesAsAssistantMessage();
     if (lastMemory) {
       return [lastMemory, ...messages];
     }

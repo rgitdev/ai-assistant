@@ -5,6 +5,8 @@ import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryRecord } from "backend/models/Memory";
 import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
+import { userProfileSystemPrompt } from "@backend/services/memory/prompts/userProfileSystemPrompt";
+import { assistantPersonaSystemPrompt } from "@backend/services/memory/prompts/assistantPersonaSystemPrompt";
 import { z } from "zod";
 
 const CreatedMemoryResponseSchema = z.object({
@@ -14,6 +16,25 @@ const CreatedMemoryResponseSchema = z.object({
 
 type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 
+type SystemPrompt = {
+  name: string;
+  prompt: string;
+}
+
+const createMemorySystemPrompt = {
+  name: "createMemorySystemPrompt",
+  prompt: memorySystemPrompt,
+}
+
+const createUserProfileSystemPrompt = {
+  name: "userProfileSystemPrompt",
+  prompt: userProfileSystemPrompt,
+}
+
+const createAssistantPersonaSystemPrompt = {
+  name: "createAssistantPersonaSystemPrompt",
+  prompt: assistantPersonaSystemPrompt,
+}
 /**
  * Service responsible for creating and storing memories from conversations.
  */
@@ -21,6 +42,7 @@ export class MemoryService {
   private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
 
+  private readonly overwrite: boolean = false;
   constructor() {
     const openAIFactory = new OpenAIServiceFactory();
     this.openAIService = openAIFactory.build();
@@ -42,6 +64,101 @@ export class MemoryService {
     conversationId: string,
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
+    return this.createMemoryForConversationInternal(
+      conversationId, 
+      messages, 
+      createMemorySystemPrompt);
+  }
+
+  /**
+   * Creates a memory record for collecting user information from a conversation.
+   * - Uses OpenAI to generate a structured JSON memory focused on user information
+   * - Persists the memory using the configured memory repository
+   *
+   * @param conversationId Unique conversation identifier
+   * @param messages Conversation messages in chronological order
+   * @returns The persisted memory record
+   */
+  public async createMemoryForCollectingUserInformation(
+    conversationId: string,
+    messages: ChatMessage[]
+  ): Promise<MemoryRecord> {
+    return this.createMemoryForConversationInternal(
+      conversationId, 
+      messages, 
+      createUserProfileSystemPrompt);
+  }
+
+  /**
+   * Creates a memory record for collecting assistant persona information from a conversation.
+   * - Uses OpenAI to generate a structured JSON memory focused on assistant characteristics and preferences
+   * - Persists the memory using the configured memory repository
+   * - Helps maintain consistency in assistant behavior across conversations
+   *
+   * @param conversationId Unique conversation identifier
+   * @param messages Conversation messages in chronological order
+   * @returns The persisted memory record
+   */
+  public async createMemoryForCollectingAssistantPersona(
+    conversationId: string,
+    messages: ChatMessage[]
+  ): Promise<MemoryRecord> {
+    return this.createMemoryForConversationInternal(
+      conversationId, 
+      messages, 
+      createAssistantPersonaSystemPrompt);
+  }
+
+    public async createMemoryForConversationInternal(
+      conversationId: string,
+      messages: ChatMessage[],
+      systemPrompt: SystemPrompt): Promise<MemoryRecord> {
+  
+    const createInput = await this.createMemoryInputFromConversation(
+      conversationId,
+      messages,
+      systemPrompt,
+      "conversation"
+    );
+    
+    const prevRecords = await this.memoryRepository.findMemoryBySource({
+      type: "chat",
+      reference: conversationId,
+    });
+    
+    const previousMatchingMemory = prevRecords.find(r => r.metadata?.systemPrompt === systemPrompt.name );
+
+    if (previousMatchingMemory && !this.overwrite) {
+      return previousMatchingMemory;
+    }
+
+    console.log("Checking previous memories for conversation: ", conversationId, prevRecords.map(r => r.id));
+    const record = await this.memoryRepository.createMemory(createInput);
+    console.log("Created memory: ", record.id);
+    if (previousMatchingMemory) {
+      console.log("Deleting previous memories", previousMatchingMemory.id);
+      // await Promise.all(prevRecords.map(r => this.memoryRepository.deleteMemory(r.id)));
+    }
+    return record;
+  }
+
+
+  /**
+   * Creates a MemoryCreateInput from conversation data using the specified system prompt.
+   * This is a helper method to avoid code duplication.
+   *
+   * @param conversationId Unique conversation identifier
+   * @param messages Conversation messages in chronological order
+   * @param systemPrompt The system prompt to use for memory generation
+   * @param memoryType The type of memory being created
+   * @returns MemoryCreateInput ready for repository creation
+   */
+  private async createMemoryInputFromConversation(
+    conversationId: string,
+    messages: ChatMessage[],
+    systemPrompt: SystemPrompt,
+    memoryType: string
+  ): Promise<MemoryCreateInput> {
     if (!conversationId || conversationId.trim().length === 0) {
       throw new Error("conversationId is required");
     }
@@ -56,17 +173,17 @@ export class MemoryService {
 
     // Ask OpenAI to produce a JSON memory object based on the conversation
     const responseRawJson = await this.openAIService.sendMessages(
-      memorySystemPrompt,
+      systemPrompt.prompt,
       openAIMessages
     );
 
     const responseJson = JSON.parse(responseRawJson) as CreatedMemoryResponse;
 
     const title = responseJson.title;
-    const content = responseJson.memory
+    const content = responseJson.memory;
     const importance = 3;
 
-    const createInput: MemoryCreateInput = {
+    return {
       title,
       content,
       tags: [],
@@ -83,34 +200,42 @@ export class MemoryService {
       metadata: {
         conversationId,
         messageCount: messages.length,
-        createdFrom: "conversation",
+        createdFrom: memoryType,
         createdBy: "MemoryService",
+        systemPrompt: systemPrompt.name,
       },
     };
-
-    const prevRecord = await this.memoryRepository.findMemoryBySource({
-      type: "chat",
-      reference: conversationId,
-    });
-    
-    console.log("Checking previous memory for conversation: ", conversationId, prevRecord?.id);
-    const record = await this.memoryRepository.createMemory(createInput);
-    if (prevRecord) {
-      console.log("Deleting previous memory", prevRecord.id);
-     // await this.memoryRepository.deleteMemory(prevRecord.id);
-    }
-    return record;
   }
 
-  public async getLastMemoryAsMessage() : Promise<ConversationMessage | null> {
+  public async getMemoriesAsAssistantMessage() : Promise<ConversationMessage | null> {
 
-    const memory = await this.memoryRepository.getMemory("b310e9ba-0b1e-4436-bed5-8314f4f5f0dd");
-    if (!memory) {
-      return null;
-    }
+    const userProfileMemory = await this.memoryRepository.findMemoriesByMetadata({
+      systemPrompt: createUserProfileSystemPrompt.name,
+    });
+
+    const lastUserProfileMemory = userProfileMemory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    const assistantPersonaMemory = await this.memoryRepository.findMemoriesByMetadata({
+      systemPrompt: createAssistantPersonaSystemPrompt.name,
+    });
+    const lastAssistantPersonaMemory = assistantPersonaMemory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    
+    const memories = await this.memoryRepository.findMemoriesByMetadata({
+      systemPrompt: createMemorySystemPrompt.name,
+    });
+
+    const memory = memories.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
     return {
       role: "assistant",
-      content: `Latest memory: ${memory.title}\n\n${memory.content}`,
+      content: `Latest memories: 
+      
+      ${memory ? `\nLatest conversation memory: ${memory.title}\n\n${memory.content}` : ""}
+      
+      ${lastUserProfileMemory ? `\nUser profile: ${lastUserProfileMemory.title}\n\n${lastUserProfileMemory.content}` : ""}
+
+      ${lastAssistantPersonaMemory ? `\nAssistant persona: ${lastAssistantPersonaMemory.title}\n\n${lastAssistantPersonaMemory.content}` : ""}
+      `,
     };
   }
 }

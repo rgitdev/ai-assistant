@@ -101,11 +101,18 @@ export class MemoryFileRepository implements IMemoryRepository {
     }
   }
 
-  async findMemoryBySource(source: SourceReference): Promise<MemoryRecord | null> {
+  async findMemoriesByMetadata(metadata: Record<string, any>): Promise<MemoryRecord[]> {
     const storage = await this.readStorage();
     return Object.values(storage)
-    .find(r => r.sources.some(
-      s => s.reference === source.reference && s.type === source.type)) || null;
+    .filter( r=> r.sources.some(s => s.type === "chat"))
+    .filter(r => r.metadata?.systemPrompt === metadata.systemPrompt);
+  }
+
+  async findMemoryBySource(source: SourceReference): Promise<MemoryRecord[]> {
+    const storage = await this.readStorage();
+    return Object.values(storage)
+    .filter(r => r.sources.some(
+      s => s.reference === source.reference && s.type === source.type));
   }
 
   async listMemories(filters?: MemoryListFilters, pagination?: { offset?: number; limit?: number; sortBy?: "createdAt" | "updatedAt" | "importance"; sortOrder?: "asc" | "desc"; }): Promise<MemoryRecord[]> {
