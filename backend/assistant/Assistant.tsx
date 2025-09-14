@@ -1,14 +1,14 @@
-import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
-import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
-import { systemPrompt } from "./prompts/systemPrompt";
+import { ConversationMessage } from "backend/client/openai/OpenAIService";
 import { IConversationRepository } from "backend/repository/IConversationRepository";
 import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
+import { AssistantService } from "@backend/services/assistant/AssistantService";
+import { systemPrompt } from "@backend/assistant/prompts/systemPrompt";
 
 export class Assistant {
   
-  openAIService: OpenAIService;
+  assistantService: AssistantService;
   conversationRepository: IConversationRepository;
 
   constructor() {
@@ -16,9 +16,10 @@ export class Assistant {
     if (!apiKey) {
       throw new Error("OPENAI_API_KEY environment variable is not set");
     }
-    const openAIFactory = new OpenAIServiceFactory();
-    this.openAIService = openAIFactory.build();
-    
+
+    const assistantService = new AssistantService();
+    this.assistantService = assistantService;
+
     const repositoryFactory = new ConversationRepositoryFactory();
     this.conversationRepository = repositoryFactory.build();
   }
@@ -26,13 +27,13 @@ export class Assistant {
 
   async sendMessage(message: string): Promise<string> {
     console.log("Sending message to assistant:", message);
-    const response = await this.openAIService.sendChatMessage(systemPrompt, message);
+    const response = await this.assistantService.sendMessage(systemPrompt, message);
     return response;
   }
 
   async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
-    const response = await this.openAIService.sendChatMessages(systemPrompt, messages);
+    const response = await this.assistantService.sendConversation(systemPrompt, messages);
     return response;
   }
 
