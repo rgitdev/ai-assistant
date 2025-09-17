@@ -23,7 +23,10 @@ export class MemoryRepositoryFactory {
   build(): IMemoryRepository {
     switch (this.repositoryType) {
       case "file":
-        return new MemoryFileRepository(this.filePathParam);
+        // Use environment variable for test file path, fallback to default
+        const defaultPath = this.filePathParam || "backend/data/memories.json";
+        const testPath = process.env.MEMORY_TEST_FILE || defaultPath;
+        return new MemoryFileRepository(testPath);
       default:
         throw new Error(`Unknown repository type: ${this.repositoryType}`);
     }

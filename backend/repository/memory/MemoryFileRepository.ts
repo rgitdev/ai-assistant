@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { IMemoryRepository, MemoryCreateInput, MemoryListFilters, MemorySearchOptions, MemoryUpdateInput } from "./IMemoryRepository";
-import { MemoryRecord, SourceReference } from "../../models/Memory";
+import { MemoryRecord, SourceReference, MemoryCategory } from "../../models/Memory";
 
 
 interface MemoryStorage {
@@ -53,6 +53,7 @@ export class MemoryFileRepository implements IMemoryRepository {
       updatedAt: now,
       tags: memoryData.tags || [],
       importance: memoryData.importance ?? 3,
+      category: memoryData.category,
       sources: memoryData.sources || [],
       embedding: memoryData.embedding,
       embeddingModel: memoryData.embeddingModel,
@@ -223,6 +224,59 @@ export class MemoryFileRepository implements IMemoryRepository {
     // Normalize
     const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1;
     return vec.map(v => v / norm);
+  }
+
+  async searchMemoriesByCategory(category: MemoryCategory, query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]> {
+    const storage = await this.readStorage();
+    const records = Object.values(storage);
+
+    // First filter by category
+    const categoryRecords = records.filter(r => r.category === category);
+
+    const topK = options?.topK ?? 10;
+    const minScore = options?.minScore ?? 0;
+
+    // Simple text-based scoring for now (embedding support will be added later)
+    const scored = categoryRecords.map(r => {
+      const score = this.calculateTextMatchScore(query, r.title, r.content);
+      return { record: r, score };
+    });
+
+    return scored
+      .filter(s => s.score >= minScore)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK)
+      .map(s => s.record);
+  }
+
+  private calculateTextMatchScore(query: string, title: string, content: string): number {
+    const q = query.toLowerCase();
+    const titleLower = title.toLowerCase();
+    const contentLower = content.toLowerCase();
+
+    // Calculate keyword overlap scores
+    const titleHits = this.countKeywordMatches(q, titleLower);
+    const contentHits = this.countKeywordMatches(q, contentLower);
+
+    // Weight title matches more heavily than content matches
+    const titleScore = Math.min(1, titleHits * 3 / 10);
+    const contentScore = Math.min(1, contentHits / 10);
+
+    // Combine scores with title having higher weight
+    return Math.min(1, titleScore + contentScore * 0.7);
+  }
+
+  private countKeywordMatches(query: string, text: string): number {
+    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+    let totalMatches = 0;
+
+    for (const word of queryWords) {
+      const escapedWord = this.escapeRegex(word);
+      const matches = (text.match(new RegExp(escapedWord, "g")) || []).length;
+      totalMatches += matches;
+    }
+
+    return totalMatches;
   }
 
   private escapeRegex(text: string): string {

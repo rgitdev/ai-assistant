@@ -1,10 +1,11 @@
-import { MemoryRecord, SourceReference } from "../../models/Memory";
+import { MemoryRecord, SourceReference, MemoryCategory } from "../../models/Memory";
 
 export interface MemoryCreateInput {
   title: string;
   content: string;
   tags?: string[];
   importance?: 1 | 2 | 3 | 4 | 5;
+  category?: MemoryCategory;
   sources?: SourceReference[];
   embedding?: number[];
   embeddingModel?: string;
@@ -16,6 +17,7 @@ export interface MemoryUpdateInput {
   content?: string;
   tags?: string[];
   importance?: 1 | 2 | 3 | 4 | 5;
+  category?: MemoryCategory;
   sources?: SourceReference[];
   embedding?: number[];
   embeddingModel?: string;
@@ -60,4 +62,5 @@ export interface IMemoryRepository {
   findMemoryBySource(source: SourceReference): Promise<MemoryRecord[]>;
   listMemories(filters?: MemoryListFilters, pagination?: PaginationOptions): Promise<MemoryRecord[]>;
   searchMemories(query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]>;
+  searchMemoriesByCategory(category: MemoryCategory, query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]>;
 }

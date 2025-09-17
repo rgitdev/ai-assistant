@@ -60,3 +60,9 @@ Requires `OPENAI_API_KEY` environment variable in `.env` file.
 - OpenAI integration with Langfuse monitoring support
 - Hot reload enabled for development
 - Do not add features that are not requested
+
+### Design Principles
+
+- **Keep related data together**: Place related types, constants, and utilities in the same file or module. For example, if you have a `MemoryCategory` type, place any related constants like `MEMORY_CATEGORIES` in the same file (`Memory.ts`). This improves maintainability and reduces the need to hunt across multiple files for related definitions.
+
+- **KISS Principle (Keep It Simple, Stupid)**: Prefer simple solutions over complex ones. A simple function is better than a complex class when it does the job. Choose the most straightforward approach that meets the requirements. Avoid over-engineering and unnecessary abstractions.

@@ -3,7 +3,7 @@ import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAI
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
-import { MemoryRecord } from "backend/models/Memory";
+import { MemoryRecord, MemoryCategory } from "backend/models/Memory";
 import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
 import { userProfileSystemPrompt } from "@backend/services/memory/prompts/userProfileSystemPrompt";
 import { assistantPersonaSystemPrompt } from "@backend/services/memory/prompts/assistantPersonaSystemPrompt";
@@ -64,10 +64,11 @@ export class MemoryService {
     conversationId: string,
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
-    return this.createMemoryForConversationInternal(
+    return this.createMemoryForCategoryInternal(
       conversationId, 
       messages, 
-      createMemorySystemPrompt);
+      createMemorySystemPrompt,
+      MemoryCategory.CONVERSATION);
   }
 
   /**
@@ -83,10 +84,11 @@ export class MemoryService {
     conversationId: string,
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
-    return this.createMemoryForConversationInternal(
+    return this.createMemoryForCategoryInternal(
       conversationId, 
       messages, 
-      createUserProfileSystemPrompt);
+      createUserProfileSystemPrompt,
+      MemoryCategory.USER_PROFILE);
   }
 
   /**
@@ -103,22 +105,25 @@ export class MemoryService {
     conversationId: string,
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
-    return this.createMemoryForConversationInternal(
+    return this.createMemoryForCategoryInternal(
       conversationId, 
       messages, 
-      createAssistantPersonaSystemPrompt);
+      createAssistantPersonaSystemPrompt,
+      MemoryCategory.ASSISTANT_PERSONA);
   }
 
-    public async createMemoryForConversationInternal(
+    public async createMemoryForCategoryInternal(
       conversationId: string,
       messages: ChatMessage[],
-      systemPrompt: SystemPrompt): Promise<MemoryRecord> {
+      systemPrompt: SystemPrompt,
+      category: MemoryCategory): Promise<MemoryRecord> {
   
     const createInput = await this.createMemoryInputFromConversation(
       conversationId,
       messages,
       systemPrompt,
-      "conversation"
+      "conversation",
+      category
     );
     
     const prevRecords = await this.memoryRepository.findMemoryBySource({
@@ -151,13 +156,15 @@ export class MemoryService {
    * @param messages Conversation messages in chronological order
    * @param systemPrompt The system prompt to use for memory generation
    * @param memoryType The type of memory being created
+   * @param category The memory category
    * @returns MemoryCreateInput ready for repository creation
    */
   private async createMemoryInputFromConversation(
     conversationId: string,
     messages: ChatMessage[],
     systemPrompt: SystemPrompt,
-    memoryType: string
+    memoryType: string,
+    category: MemoryCategory
   ): Promise<MemoryCreateInput> {
     if (!conversationId || conversationId.trim().length === 0) {
       throw new Error("conversationId is required");
@@ -188,6 +195,7 @@ export class MemoryService {
       content,
       tags: [],
       importance,
+      category,
       sources: [
         {
           type: "chat",
@@ -238,5 +246,8 @@ export class MemoryService {
       `,
     };
   }
+
+
+  
 }
 

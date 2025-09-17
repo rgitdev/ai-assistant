@@ -65,6 +65,8 @@ This is a Bun-based React application with a separate backend API server that pr
 8. Use factory pattern for service instantiation
 9. Maintain conversation state properly
 10. Include proper health check endpoints
+11. **Keep related data together**: Place related types, constants, and utilities in the same file or module (e.g., `MemoryCategory` type and `MEMORY_CATEGORIES` constant in `Memory.ts`)
+12. **KISS Principle**: Keep It Simple, Stupid. Prefer simple solutions over complex ones. A simple function is better than a complex class when it does the job. Choose the most straightforward approach that meets the requirements.
 
 ## File Naming
 - Use PascalCase for components and classes

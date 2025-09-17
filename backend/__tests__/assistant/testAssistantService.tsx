@@ -1,6 +1,6 @@
 import { AssistantService } from "@backend/services/assistant/AssistantService";
 import { ConversationMessage } from "@backend/client/openai/OpenAIService";
-import { systemPrompt } from "backend/assistant/prompts/systemPrompt";
+import { getAssistantSystemPrompt } from "backend/assistant/prompts/systemPrompt";
 
 const assistantService = new AssistantService();
 
@@ -11,5 +11,5 @@ const messages: ConversationMessage[] = [
   },
 ];  
 
-const response = await assistantService.sendConversation(systemPrompt, messages);
+const response = await assistantService.sendConversation(getAssistantSystemPrompt(), messages);
 console.log(response);

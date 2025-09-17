@@ -1,6 +1,6 @@
 import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
-import { systemPrompt } from "backend/assistant/prompts/systemPrompt";
+import { getAssistantSystemPrompt } from "backend/assistant/prompts/systemPrompt";
 import { MemoryService } from "../memory/MemoryService";
 
 export class AssistantService {
@@ -39,17 +39,48 @@ export class AssistantService {
   }
 
   async addMemoryMessages(messages: ConversationMessage[]): Promise<ConversationMessage[]> {
+    const enhancedMessages: ConversationMessage[] = [];
 
+    // Add time context message
+    const timeContextMessage = this.getCurrentTimeContextMessage();
+    enhancedMessages.push(timeContextMessage);
+
+    // Add memory messages
     const lastMemory = await this.memoryService.getMemoriesAsAssistantMessage();
     if (lastMemory) {
-      return [lastMemory, ...messages];
+      enhancedMessages.push(lastMemory);
     }
-    return messages;
 
+    // Add original conversation messages
+    enhancedMessages.push(...messages);
+
+    return enhancedMessages;
   }
+
+  private getCurrentTimeContextMessage(): ConversationMessage {
+    const currentTime = new Date().toLocaleString('en-US', { 
+      timeZone: 'UTC', 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    });
+
+    return {
+      role: "assistant",
+      content: `## Current Context
+Current date and time: ${currentTime} UTC
+
+When discussing time-sensitive topics, always reference the current date and time provided above to maintain temporal accuracy in your responses.`
+    };
+  }
+  
 }
 
 if (require.main === module) {
   const assistant = new AssistantService();
-  assistant.sendMessage(systemPrompt, "Hello, how are you? what's your name?").then(console.log);
+  assistant.sendMessage(getAssistantSystemPrompt(), "Hello, how are you? what's your name?").then(console.log);
 }
