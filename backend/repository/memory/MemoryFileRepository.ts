@@ -3,6 +3,7 @@ import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { IMemoryRepository, MemoryCreateInput, MemoryListFilters, MemorySearchOptions, MemoryUpdateInput } from "./IMemoryRepository";
 import { MemoryRecord, SourceReference, MemoryCategory } from "../../models/Memory";
+import { VectorStore } from "../../client/vector/VectorStore";
 
 
 interface MemoryStorage {
@@ -11,9 +12,11 @@ interface MemoryStorage {
 
 export class MemoryFileRepository implements IMemoryRepository {
   private filePath: string;
+  private vectorStore: VectorStore;
 
-  constructor(filePath: string = "backend/data/memories.json") {
+  constructor(filePath: string = "backend/data/memories.json", vectorStore?: VectorStore) {
     this.filePath = filePath;
+    this.vectorStore = vectorStore || new VectorStore();
     this.ensureFileExists();
   }
 
@@ -55,8 +58,6 @@ export class MemoryFileRepository implements IMemoryRepository {
       importance: memoryData.importance ?? 3,
       category: memoryData.category,
       sources: memoryData.sources || [],
-      embedding: memoryData.embedding,
-      embeddingModel: memoryData.embeddingModel,
       metadata: memoryData.metadata,
     };
 
@@ -83,8 +84,6 @@ export class MemoryFileRepository implements IMemoryRepository {
       tags: updates.tags ?? existing.tags,
       importance: updates.importance ?? existing.importance,
       sources: updates.sources ?? existing.sources,
-      embedding: updates.embedding ?? existing.embedding,
-      embeddingModel: updates.embeddingModel ?? existing.embeddingModel,
       metadata: updates.metadata ?? existing.metadata,
       updatedAt: new Date(),
     };
@@ -178,20 +177,25 @@ export class MemoryFileRepository implements IMemoryRepository {
     const topK = options?.topK ?? 10;
     const minScore = options?.minScore ?? 0;
 
-    // Simple semantic-ish scoring using cosine similarity if embeddings exist; otherwise fallback to text match score
+    // Try vector search first by checking if any vectors exist for memory records
+    const vectorResults = await this.vectorStore.searchSimilar(
+      this.vectorStore.fakeEmbed(query, 1536), // Use standard embedding dimension
+      topK,
+      minScore
+    );
+
+    if (vectorResults.length > 0) {
+      // Return memories that have corresponding vectors
+      const memoryIds = vectorResults
+        .filter(result => result.record.sourceType === "Memory")
+        .map(result => result.record.sourceId);
+
+      return records.filter(record => memoryIds.includes(record.id));
+    }
+
+    // Fallback to text-based search if no vectors found
     const scored = records.map(r => {
-      let score = 0;
-      if (r.embedding && Array.isArray(r.embedding) && r.embedding.length > 0) {
-        // naive: embed query by averaging char codes (fallback). Real embedding handled outside and saved.
-        const qVec = this.fakeEmbed(query, r.embedding.length);
-        score = this.cosineSimilarity(qVec, r.embedding);
-      } else {
-        // Fallback to keyword overlap
-        const q = query.toLowerCase();
-        const titleHits = (r.title.toLowerCase().match(new RegExp(this.escapeRegex(q), "g")) || []).length;
-        const contentHits = (r.content.toLowerCase().match(new RegExp(this.escapeRegex(q), "g")) || []).length;
-        score = Math.min(1, (titleHits * 2 + contentHits) / 10);
-      }
+      const score = this.calculateTextMatchScore(query, r.title, r.content);
       return { record: r, score };
     });
 
@@ -202,29 +206,6 @@ export class MemoryFileRepository implements IMemoryRepository {
       .map(s => s.record);
   }
 
-  private cosineSimilarity(a: number[], b: number[]): number {
-    const len = Math.min(a.length, b.length);
-    let dot = 0, na = 0, nb = 0;
-    for (let i = 0; i < len; i++) {
-      dot += a[i] * b[i];
-      na += a[i] * a[i];
-      nb += b[i] * b[i];
-    }
-    if (na === 0 || nb === 0) return 0;
-    return dot / (Math.sqrt(na) * Math.sqrt(nb));
-  }
-
-  private fakeEmbed(text: string, dims: number): number[] {
-    // Deterministic pseudo-embedding to allow basic similarity if embeddings are missing
-    const vec = new Array(dims).fill(0);
-    for (let i = 0; i < text.length; i++) {
-      const code = text.charCodeAt(i);
-      vec[i % dims] += code / 255;
-    }
-    // Normalize
-    const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1;
-    return vec.map(v => v / norm);
-  }
 
   async searchMemoriesByCategory(category: MemoryCategory, query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]> {
     const storage = await this.readStorage();
@@ -236,7 +217,22 @@ export class MemoryFileRepository implements IMemoryRepository {
     const topK = options?.topK ?? 10;
     const minScore = options?.minScore ?? 0;
 
-    // Simple text-based scoring for now (embedding support will be added later)
+    // Try vector search first
+    const vectorResults = await this.vectorStore.searchSimilar(
+      this.vectorStore.fakeEmbed(query, 1536),
+      topK,
+      minScore
+    );
+
+    if (vectorResults.length > 0) {
+      const memoryIds = vectorResults
+        .filter(result => result.record.sourceType === "Memory")
+        .map(result => result.record.sourceId);
+
+      return categoryRecords.filter(record => memoryIds.includes(record.id));
+    }
+
+    // Fallback to text-based scoring
     const scored = categoryRecords.map(r => {
       const score = this.calculateTextMatchScore(query, r.title, r.content);
       return { record: r, score };

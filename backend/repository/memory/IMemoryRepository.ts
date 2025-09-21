@@ -7,8 +7,6 @@ export interface MemoryCreateInput {
   importance?: 1 | 2 | 3 | 4 | 5;
   category?: MemoryCategory;
   sources?: SourceReference[];
-  embedding?: number[];
-  embeddingModel?: string;
   metadata?: Record<string, any>;
 }
 
@@ -19,8 +17,6 @@ export interface MemoryUpdateInput {
   importance?: 1 | 2 | 3 | 4 | 5;
   category?: MemoryCategory;
   sources?: SourceReference[];
-  embedding?: number[];
-  embeddingModel?: string;
   metadata?: Record<string, any>;
 }
 
