@@ -1,9 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { IMemoryRepository, MemoryCreateInput, MemoryListFilters, MemorySearchOptions, MemoryUpdateInput } from "./IMemoryRepository";
+import { IMemoryRepository, MemoryCreateInput, MemoryUpdateInput } from "./IMemoryRepository";
 import { MemoryRecord, SourceReference, MemoryCategory } from "../../models/Memory";
-import { VectorStore } from "../../client/vector/VectorStore";
 
 
 interface MemoryStorage {
@@ -12,11 +11,9 @@ interface MemoryStorage {
 
 export class MemoryFileRepository implements IMemoryRepository {
   private filePath: string;
-  private vectorStore: VectorStore;
 
-  constructor(filePath: string = "backend/data/memories.json", vectorStore?: VectorStore) {
+  constructor(filePath: string = "backend/data/memories.json") {
     this.filePath = filePath;
-    this.vectorStore = vectorStore || new VectorStore();
     this.ensureFileExists();
   }
 
@@ -115,167 +112,39 @@ export class MemoryFileRepository implements IMemoryRepository {
       s => s.reference === source.reference && s.type === source.type));
   }
 
-  async listMemories(filters?: MemoryListFilters, pagination?: { offset?: number; limit?: number; sortBy?: "createdAt" | "updatedAt" | "importance"; sortOrder?: "asc" | "desc"; }): Promise<MemoryRecord[]> {
+  async findMemoriesByCategory(category: MemoryCategory): Promise<MemoryRecord[]> {
     const storage = await this.readStorage();
-    let records = Object.values(storage);
-
-    // Filtering
-    if (filters) {
-      const { tagsAny, tagsAll, importanceMin, importanceMax, text, createdAfter, createdBefore } = filters;
-
-      if (tagsAny && tagsAny.length > 0) {
-        records = records.filter(r => r.tags?.some(t => tagsAny.includes(t)));
-      }
-      if (tagsAll && tagsAll.length > 0) {
-        records = records.filter(r => tagsAll.every(t => r.tags?.includes(t)));
-      }
-      if (importanceMin) {
-        records = records.filter(r => r.importance >= importanceMin);
-      }
-      if (importanceMax) {
-        records = records.filter(r => r.importance <= importanceMax);
-      }
-      if (text && text.trim().length > 0) {
-        const q = text.toLowerCase();
-        records = records.filter(r =>
-          r.title.toLowerCase().includes(q) || r.content.toLowerCase().includes(q)
-        );
-      }
-      if (createdAfter) {
-        records = records.filter(r => new Date(r.createdAt) >= createdAfter);
-      }
-      if (createdBefore) {
-        records = records.filter(r => new Date(r.createdAt) <= createdBefore);
-      }
-    }
-
-    // Sorting
-    const { sortBy = "updatedAt", sortOrder = "desc", offset = 0, limit = 50 } = pagination || {};
-    records.sort((a, b) => {
-      let av: number;
-      let bv: number;
-      if (sortBy === "importance") {
-        av = a.importance;
-        bv = b.importance;
-      } else {
-        const ad = new Date(a[sortBy] as Date);
-        const bd = new Date(b[sortBy] as Date);
-        av = ad.getTime();
-        bv = bd.getTime();
-      }
-      return sortOrder === "asc" ? av - bv : bv - av;
-    });
-
-    // Pagination
-    return records.slice(offset, offset + limit);
+    return Object.values(storage)
+      .filter(r => r.category === category);
   }
 
-  async searchMemories(query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]> {
+  async getAllMemories(): Promise<MemoryRecord[]> {
+    const storage = await this.readStorage();
+    return Object.values(storage);
+  }
+
+  async getRecentMemories(limit: number = 50): Promise<MemoryRecord[]> {
     const storage = await this.readStorage();
     const records = Object.values(storage);
 
-    const topK = options?.topK ?? 10;
-    const minScore = options?.minScore ?? 0;
-
-    // Try vector search first by checking if any vectors exist for memory records
-    const vectorResults = await this.vectorStore.searchSimilar(
-      this.vectorStore.fakeEmbed(query, 1536), // Use standard embedding dimension
-      topK,
-      minScore
-    );
-
-    if (vectorResults.length > 0) {
-      // Return memories that have corresponding vectors
-      const memoryIds = vectorResults
-        .filter(result => result.record.sourceType === "Memory")
-        .map(result => result.record.sourceId);
-
-      return records.filter(record => memoryIds.includes(record.id));
-    }
-
-    // Fallback to text-based search if no vectors found
-    const scored = records.map(r => {
-      const score = this.calculateTextMatchScore(query, r.title, r.content);
-      return { record: r, score };
-    });
-
-    return scored
-      .filter(s => s.score >= minScore)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK)
-      .map(s => s.record);
+    records.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return records.slice(0, limit);
   }
 
-
-  async searchMemoriesByCategory(category: MemoryCategory, query: string, options?: MemorySearchOptions): Promise<MemoryRecord[]> {
+  async findMemoriesByText(text: string, limit: number = 10): Promise<MemoryRecord[]> {
     const storage = await this.readStorage();
     const records = Object.values(storage);
 
-    // First filter by category
-    const categoryRecords = records.filter(r => r.category === category);
-
-    const topK = options?.topK ?? 10;
-    const minScore = options?.minScore ?? 0;
-
-    // Try vector search first
-    const vectorResults = await this.vectorStore.searchSimilar(
-      this.vectorStore.fakeEmbed(query, 1536),
-      topK,
-      minScore
+    const query = text.toLowerCase();
+    const filtered = records.filter(r =>
+      r.title.toLowerCase().includes(query) || r.content.toLowerCase().includes(query)
     );
 
-    if (vectorResults.length > 0) {
-      const memoryIds = vectorResults
-        .filter(result => result.record.sourceType === "Memory")
-        .map(result => result.record.sourceId);
-
-      return categoryRecords.filter(record => memoryIds.includes(record.id));
-    }
-
-    // Fallback to text-based scoring
-    const scored = categoryRecords.map(r => {
-      const score = this.calculateTextMatchScore(query, r.title, r.content);
-      return { record: r, score };
-    });
-
-    return scored
-      .filter(s => s.score >= minScore)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK)
-      .map(s => s.record);
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return filtered.slice(0, limit);
   }
 
-  private calculateTextMatchScore(query: string, title: string, content: string): number {
-    const q = query.toLowerCase();
-    const titleLower = title.toLowerCase();
-    const contentLower = content.toLowerCase();
 
-    // Calculate keyword overlap scores
-    const titleHits = this.countKeywordMatches(q, titleLower);
-    const contentHits = this.countKeywordMatches(q, contentLower);
 
-    // Weight title matches more heavily than content matches
-    const titleScore = Math.min(1, titleHits * 3 / 10);
-    const contentScore = Math.min(1, contentHits / 10);
 
-    // Combine scores with title having higher weight
-    return Math.min(1, titleScore + contentScore * 0.7);
-  }
-
-  private countKeywordMatches(query: string, text: string): number {
-    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
-    let totalMatches = 0;
-
-    for (const word of queryWords) {
-      const escapedWord = this.escapeRegex(word);
-      const matches = (text.match(new RegExp(escapedWord, "g")) || []).length;
-      totalMatches += matches;
-    }
-
-    return totalMatches;
-  }
-
-  private escapeRegex(text: string): string {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
 }

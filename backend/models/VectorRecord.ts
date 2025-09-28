@@ -17,4 +17,5 @@ export interface VectorSearchResult {
 export interface VectorSearchOptions {
   limit?: number;
   minScore?: number;
+  sourceType?: string;
 }

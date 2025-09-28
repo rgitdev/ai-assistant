@@ -55,9 +55,15 @@ export class VectorStore {
     return vectorRecord;
   }
 
-  async searchSimilar(queryVector: number[], limit: number = 15, minScore: number = 0): Promise<VectorSearchResult[]> {
+  async searchSimilar(queryVector: number[], options: VectorSearchOptions = {}): Promise<VectorSearchResult[]> {
+    const { limit = 15, minScore = 0, sourceType } = options;
     const storage = await this.readStorage();
-    const records = Object.values(storage);
+    let records = Object.values(storage);
+
+    // Filter by sourceType if specified
+    if (sourceType) {
+      records = records.filter(record => record.sourceType === sourceType);
+    }
 
     const scored = records.map(record => {
       const score = this.cosineSimilarity(queryVector, record.embedding);

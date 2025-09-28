@@ -2,6 +2,7 @@ import { serve } from "bun";
 import { assistantController } from "./api/assistant/AssistantController";
 import { conversationController } from "./api/conversation/ConversationController";
 import { ChatEditRequest, ChatRequest } from "./models/ChatMessage";
+import { SchedulerInitializer } from "./services/scheduler/SchedulerInitializer";
 
 // CORS headers
 const corsHeaders = {
@@ -163,6 +164,12 @@ const server = serve({
   },
 
   development: process.env.NODE_ENV !== "production",
+});
+
+// Initialize and start the scheduler
+const scheduler = new SchedulerInitializer();
+scheduler.initialize().catch(error => {
+  console.error('Failed to initialize scheduler:', error);
 });
 
 console.log(`🚀 Backend server running at ${server.url}`);

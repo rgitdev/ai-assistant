@@ -1,4 +1,5 @@
 import { MemoryService } from "@backend/services/memory/MemoryService";
+import { ChatMessage } from "@backend/models/ChatMessage";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -12,7 +13,7 @@ console.log("Using test file:", process.env.MEMORY_TEST_FILE);
 // Test the mapping function directly (we'll need to make it public or test through reflection)
 // For now, let's create memories and check their categories
 
-const testMessages = [
+const testMessages: ChatMessage[] = [
   {
     "id": "test-1",
     "content": "Test message for user profile",
