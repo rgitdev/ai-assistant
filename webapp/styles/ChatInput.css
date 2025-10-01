@@ -77,17 +77,17 @@
 }
 
 .input-footer {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   text-align: center;
 }
 
 .input-hint {
   color: #9ca3af;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 500;
   background: rgba(255, 255, 255, 0.6);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
   backdrop-filter: blur(10px);
   display: inline-block;
 }
