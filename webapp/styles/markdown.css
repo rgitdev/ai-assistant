@@ -170,6 +170,7 @@
 @media (prefers-color-scheme: dark) {
   .markdown-h1 {
     border-bottom-color: #374151;
+    color: #f9fafb;
   }
   
   .markdown-h2 {

@@ -2,12 +2,16 @@ import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAI
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { getAssistantSystemPrompt } from "backend/assistant/prompts/systemPrompt";
 import { MemoryService } from "../memory/MemoryService";
-
+import { MemorySearchService } from "../memory/MemorySearchService";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
+import { VectorStore } from "@backend/client/vector/VectorStore";
 export class AssistantService {
   
   openAIService: OpenAIService;
   memoryService: MemoryService;
-
+  memorySearchService: MemorySearchService;
+  vectorStore: VectorStore;
+  embeddingService: OpenAIEmbeddingService;
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -18,6 +22,15 @@ export class AssistantService {
     
     const memoryService = new MemoryService();
     this.memoryService = memoryService;
+
+    const vectorStore = new VectorStore();
+    this.vectorStore = vectorStore;
+
+    const embeddingService = new OpenAIEmbeddingService();
+    this.embeddingService = embeddingService;
+
+    const memorySearchService = new MemorySearchService(vectorStore, embeddingService);
+    this.memorySearchService = memorySearchService;
   }
 
 
@@ -45,6 +58,9 @@ export class AssistantService {
     const timeContextMessage = this.getCurrentTimeContextMessage();
     enhancedMessages.push(timeContextMessage);
 
+    // Add search results
+
+    const foundMemories = await this.memorySearchService.searchMemories(messages[messages.length - 1].content);
     // Add memory messages
     const lastMemory = await this.memoryService.getMemoriesAsAssistantMessage();
     if (lastMemory) {
@@ -59,7 +75,7 @@ export class AssistantService {
 
   private getCurrentTimeContextMessage(): ConversationMessage {
     const currentTime = new Date().toLocaleString('en-US', { 
-      timeZone: 'UTC', 
+      timeZone: 'Europe/Berlin', 
       weekday: 'long', 
       year: 'numeric', 
       month: 'long', 
@@ -72,7 +88,7 @@ export class AssistantService {
     return {
       role: "assistant",
       content: `## Current Context
-Current date and time: ${currentTime} UTC
+Current date and time: ${currentTime} (GMT+1/CEST)
 
 When discussing time-sensitive topics, always reference the current date and time provided above to maintain temporal accuracy in your responses.`
     };

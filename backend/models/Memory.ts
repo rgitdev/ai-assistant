@@ -38,10 +38,6 @@ export interface MemoryRecord {
   // Source tracking
   sources: SourceReference[]; // Array of source references
 
-  // Vector search support
-  embedding?: number[]; // Vector embedding for semantic search
-  embeddingModel?: string; // Model used for embedding (e.g., "text-embedding-ada-002")
-
   // Metadata
   metadata?: Record<string, any>; // Flexible metadata storage
 }
