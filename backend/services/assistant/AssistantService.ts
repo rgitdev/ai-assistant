@@ -40,18 +40,23 @@ export class AssistantService {
     return response;
   }
 
-  async sendConversation(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
+  async sendConversationWithMemory(
+    baseSystemPrompt: string,
+    memoryInstructionPrompt: string, 
+    messages: ConversationMessage[]
+  ): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
 
-    const enhancedMessages = await this.addMemoryMessages(messages);
+    const fullSystemPrompt = baseSystemPrompt + "\n\n" + memoryInstructionPrompt;
+    const enhancedMessages = await this.addMemoryToMessages(messages);
 
     console.log("Adding memory messages to conversation:", enhancedMessages.length, "messages");
 
-    const response = await this.openAIService.sendChatMessages(systemPrompt, enhancedMessages);
+    const response = await this.openAIService.sendChatMessages(fullSystemPrompt, enhancedMessages);
     return response;
   }
 
-  async addMemoryMessages(messages: ConversationMessage[]): Promise<ConversationMessage[]> {
+  async addMemoryToMessages(messages: ConversationMessage[]): Promise<ConversationMessage[]> {
     const enhancedMessages: ConversationMessage[] = [];
 
     // Add time context message

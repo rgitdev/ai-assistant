@@ -4,7 +4,7 @@ import { ConversationRepositoryFactory } from "backend/repository/ConversationRe
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
 import { AssistantService } from "@backend/services/assistant/AssistantService";
-import { getAssistantSystemPrompt } from "@backend/assistant/prompts/systemPrompt";
+import { getAssistantSystemPrompt, getBaseAssistantSystemPrompt, getMemoryInstructionPrompt } from "@backend/assistant/prompts/systemPrompt";
 
 export class Assistant {
   
@@ -33,7 +33,11 @@ export class Assistant {
 
   async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
-    const response = await this.assistantService.sendConversation(getAssistantSystemPrompt(), messages);
+    const response = await this.assistantService.sendConversationWithMemory(
+      getBaseAssistantSystemPrompt(), 
+      getMemoryInstructionPrompt(), 
+      messages
+    );
     return response;
   }
 
