@@ -22,8 +22,8 @@ export class AssistantController {
     let conversationId: string;
 
     if (this.useSimulatedResponses) {
-      // For simulated responses, we still need to handle conversation creation
-      conversationId = requestBody.conversationId || await this.assistant.createConversation();
+      // For simulated responses, just use a random UUID (no need to persist)
+      conversationId = requestBody.conversationId || uuidv4();
       responseContent = SampleHandler.getSimulatedResponse(requestBody.message);
     } else {
       // Use the new simplified Assistant API
