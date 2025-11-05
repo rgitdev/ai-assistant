@@ -16,23 +16,25 @@ export class AssistantController {
     if (!requestBody.message || typeof requestBody.message !== 'string') {
       throw new Error('Message is required and must be a string');
     }
-    
-    let conversationId = requestBody.conversationId;
-    
-    // Create new conversation if none provided
-    if (!conversationId) {
-      conversationId = await this.assistant.createConversation();
-    }
-    
+
     // Get assistant response (simulated or real)
     let responseContent: string;
+    let conversationId: string;
+
     if (this.useSimulatedResponses) {
+      // For simulated responses, we still need to handle conversation creation
+      conversationId = requestBody.conversationId || await this.assistant.createConversation();
       responseContent = SampleHandler.getSimulatedResponse(requestBody.message);
     } else {
-      const result = await this.assistant.sendMessageToConversation(conversationId, requestBody.message);
+      // Use the new simplified Assistant API
+      const result = requestBody.conversationId
+        ? await this.assistant.handleMessage(requestBody.conversationId, requestBody.message)
+        : await this.assistant.handleNewMessage(requestBody.message);
+
       responseContent = result.response;
+      conversationId = result.conversationId;
     }
-    
+
     const aiResponse: ChatResponse = {
       id: uuidv4(),
       content: responseContent,
@@ -40,7 +42,7 @@ export class AssistantController {
       timestamp: new Date().toISOString(),
       conversationId
     };
-    
+
     return aiResponse;
   }
   
