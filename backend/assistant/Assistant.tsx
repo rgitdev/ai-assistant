@@ -25,26 +25,27 @@ export class Assistant {
   }
 
 
-  async sendMessage(message: string): Promise<string> {
-    console.log("Sending message to assistant:", message);
-    const response = await this.assistantService.sendMessage(getAssistantSystemPrompt(), message);
-    return response;
+  /**
+   * Handle a new message by creating a new conversation
+   * @param message - The user's message
+   * @returns Object containing the assistant's response and the new conversationId
+   */
+  async handleNewMessage(message: string): Promise<{ response: string; conversationId: string }> {
+    const conversationId = await this.createConversation();
+    return await this.handleMessage(conversationId, message);
   }
 
-  async sendConversation(messages: ConversationMessage[]): Promise<string> {
-    console.log("Sending conversation to assistant:", messages.length, "messages");
-    const response = await this.assistantService.sendConversationWithMemory(
-      getBaseAssistantSystemPrompt(), 
-      getMemoryInstructionPrompt(), 
-      messages
-    );
-    return response;
-  }
-
-  async sendMessageToConversation(conversationId: string, userMessage: string): Promise<{ response: string; conversationId: string }> {
+  /**
+   * Handle a message in an existing conversation
+   * @param conversationId - The ID of the existing conversation
+   * @param message - The user's message
+   * @returns Object containing the assistant's response and conversationId
+   */
+  async handleMessage(conversationId: string, message: string): Promise<{ response: string; conversationId: string }> {
+    // Add user message to conversation
     const userChatMessage: ChatMessage = {
       id: uuidv4(),
-      content: userMessage,
+      content: message,
       role: 'user',
       timestamp: new Date().toISOString()
     };
@@ -60,6 +61,7 @@ export class Assistant {
 
     const response = await this.sendConversation(openAIMessages);
 
+    // Add assistant response to conversation
     const assistantChatMessage: ChatMessage = {
       id: uuidv4(),
       content: response,
@@ -70,6 +72,18 @@ export class Assistant {
     await this.conversationRepository.addMessage(conversationId, assistantChatMessage);
 
     return { response, conversationId };
+  }
+
+  // Internal methods below
+
+  private async sendConversation(messages: ConversationMessage[]): Promise<string> {
+    console.log("Sending conversation to assistant:", messages.length, "messages");
+    const response = await this.assistantService.sendConversationWithMemory(
+      getBaseAssistantSystemPrompt(),
+      getMemoryInstructionPrompt(),
+      messages
+    );
+    return response;
   }
 
   async createConversation(): Promise<string> {
@@ -138,5 +152,8 @@ export class Assistant {
 
 if (require.main === module) {
   const assistant = new Assistant();
-  assistant.sendMessage("Hello, how are you? what's your name?").then(console.log);
+  assistant.handleNewMessage("Hello, how are you? what's your name?").then(result => {
+    console.log("Response:", result.response);
+    console.log("Conversation ID:", result.conversationId);
+  });
 }
