@@ -5,6 +5,15 @@ import { MemoryService } from "../memory/MemoryService";
 import { MemorySearchService } from "../memory/MemorySearchService";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 import { VectorStore } from "@backend/client/vector/VectorStore";
+
+export class SendConversationRequest {
+  constructor(
+    public baseSystemPrompt: string,
+    public memoryInstructionPrompt: string,
+    public messages: ConversationMessage[]
+  ) {}
+}
+
 export class AssistantService {
   
   openAIService: OpenAIService;
@@ -40,15 +49,11 @@ export class AssistantService {
     return response;
   }
 
-  async sendConversationWithMemory(
-    baseSystemPrompt: string,
-    memoryInstructionPrompt: string, 
-    messages: ConversationMessage[]
-  ): Promise<string> {
-    console.log("Sending conversation to assistant:", messages.length, "messages");
+  async sendConversationWithMemory(request: SendConversationRequest): Promise<string> {
+    console.log("Sending conversation to assistant:", request.messages.length, "messages");
 
-    const fullSystemPrompt = baseSystemPrompt + "\n\n" + memoryInstructionPrompt;
-    const enhancedMessages = await this.addMemoryToMessages(messages);
+    const fullSystemPrompt = request.baseSystemPrompt + "\n\n" + request.memoryInstructionPrompt;
+    const enhancedMessages = await this.addMemoryToMessages(request.messages);
 
     console.log("Adding memory messages to conversation:", enhancedMessages.length, "messages");
 

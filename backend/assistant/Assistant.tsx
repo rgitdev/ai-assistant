@@ -3,7 +3,7 @@ import { IConversationRepository } from "backend/repository/IConversationReposit
 import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
-import { AssistantService } from "@backend/services/assistant/AssistantService";
+import { AssistantService, SendConversationRequest } from "@backend/services/assistant/AssistantService";
 import { getAssistantSystemPrompt, getBaseAssistantSystemPrompt, getMemoryInstructionPrompt } from "@backend/assistant/prompts/systemPrompt";
 
 export class Assistant {
@@ -90,11 +90,12 @@ export class Assistant {
 
   private async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
-    const response = await this.assistantService.sendConversationWithMemory(
+    const request = new SendConversationRequest(
       getBaseAssistantSystemPrompt(),
       getMemoryInstructionPrompt(),
       messages
     );
+    const response = await this.assistantService.sendConversationWithMemory(request);
     return response;
   }
 
