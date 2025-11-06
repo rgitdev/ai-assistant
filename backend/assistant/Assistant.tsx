@@ -1,5 +1,4 @@
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
-import { IConversationRepository } from "backend/repository/IConversationRepository";
 import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
@@ -9,11 +8,12 @@ import { MemoryService } from "@backend/services/memory/MemoryService";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
+import { ConversationService } from "@backend/services/conversation/ConversationService";
 
 export class Assistant {
 
   assistantService: AssistantService;
-  conversationRepository: IConversationRepository;
+  conversationService: ConversationService;
   memoryService: MemoryService;
   memorySearchService: MemorySearchService;
 
@@ -26,8 +26,10 @@ export class Assistant {
     const assistantService = new AssistantService();
     this.assistantService = assistantService;
 
+    // Setup conversation service with repository
     const repositoryFactory = new ConversationRepositoryFactory();
-    this.conversationRepository = repositoryFactory.build();
+    const conversationRepository = repositoryFactory.build();
+    this.conversationService = new ConversationService(conversationRepository);
 
     // Orchestration: Assistant manages memory-related services
     this.memoryService = new MemoryService();
@@ -44,7 +46,7 @@ export class Assistant {
    * @returns Object containing the assistant's response and the new conversationId
    */
   async handleNewMessage(message: string): Promise<{ response: string; conversationId: string }> {
-    const conversationId = await this.createConversation();
+    const conversationId = await this.conversationService.createConversation();
     return await this.handleMessage(conversationId, message);
   }
 
@@ -63,7 +65,7 @@ export class Assistant {
       timestamp: new Date().toISOString()
     };
 
-    await this.conversationRepository.addMessage(conversationId, userChatMessage);
+    await this.conversationService.addMessage(conversationId, userChatMessage);
 
     // Generate and add assistant response
     const response = await this.generateAndAddResponse(conversationId);
@@ -80,7 +82,7 @@ export class Assistant {
    */
   private async generateAndAddResponse(conversationId: string): Promise<string> {
     // Get full conversation history and send to OpenAI
-    const conversationMessages = await this.conversationRepository.getConversationMessages(conversationId);
+    const conversationMessages = await this.conversationService.getConversationMessages(conversationId);
     const openAIMessages: ConversationMessage[] = conversationMessages.map(msg => ({
       role: msg.role,
       content: msg.content
@@ -96,7 +98,7 @@ export class Assistant {
       timestamp: new Date().toISOString()
     };
 
-    await this.conversationRepository.addMessage(conversationId, assistantChatMessage);
+    await this.conversationService.addMessage(conversationId, assistantChatMessage);
 
     return response;
   }
@@ -163,54 +165,11 @@ When discussing time-sensitive topics, always reference the current date and tim
     };
   }
 
-  async createConversation(): Promise<string> {
-    return await this.conversationRepository.createConversation();
-  }
-
-  async getConversationMessages(conversationId: string): Promise<ChatMessage[]> {
-    return await this.conversationRepository.getConversationMessages(conversationId);
-  }
-
-  async getConversations() {
-    return await this.conversationRepository.getConversations();
-  }
-
-  async updateConversationName(conversationId: string, name: string): Promise<void> {
-    await this.conversationRepository.updateConversationName(conversationId, name);
-  }
-
-  /**
-   * Validates that the given message is the last user message in the conversation
-   * @throws Error if validation fails
-   */
-  private async validateIsLastUserMessage(conversationId: string, messageId: string): Promise<void> {
-    const messages = await this.conversationRepository.getConversationMessages(conversationId);
-
-    if (!messages || messages.length === 0) {
-      throw new Error('Conversation is empty');
-    }
-
-    // Find the last user message
-    const lastUserMessage = [...messages]
-      .filter(m => m.role === 'user')
-      .pop();
-
-    if (!lastUserMessage) {
-      throw new Error('No user message found in conversation');
-    }
-
-    if (lastUserMessage.id !== messageId) {
-      throw new Error('Only the last user message can be edited');
-    }
-  }
-
   /**
    * Edit the last user message in a conversation and regenerate the assistant's response
    * This will:
-   * 1. Validate that the message is the last user message
-   * 2. Update the message content
-   * 3. Delete all messages after it (including old assistant responses)
-   * 4. Generate a new assistant response
+   * 1. Update the last user message and remove all following messages (via ConversationService)
+   * 2. Generate a new assistant response
    *
    * @param conversationId - The conversation ID
    * @param messageId - The ID of the last user message to edit
@@ -222,16 +181,14 @@ When discussing time-sensitive topics, always reference the current date and tim
     messageId: string,
     newContent: string
   ): Promise<{ response: string; conversationId: string }> {
-    // Step 1: Validate that this is the last user message
-    await this.validateIsLastUserMessage(conversationId, messageId);
+    // Step 1: Update last user message and remove following messages
+    await this.conversationService.updateLastUserMessageAndRemoveFollowing(
+      conversationId,
+      messageId,
+      newContent
+    );
 
-    // Step 2: Update the user message with new content
-    await this.conversationRepository.updateMessage(messageId, newContent);
-
-    // Step 3: Delete all messages after the edited message (old assistant responses)
-    await this.conversationRepository.deleteMessagesAfter(conversationId, messageId);
-
-    // Step 4: Generate and add new assistant response
+    // Step 2: Generate and add new assistant response
     const response = await this.generateAndAddResponse(conversationId);
 
     return { response, conversationId };

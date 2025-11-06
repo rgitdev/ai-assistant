@@ -45,31 +45,7 @@ export class AssistantController {
 
     return aiResponse;
   }
-  
-  // GET /api/assistant/conversations/:id - Get conversation history
-  async getConversation(conversationId: string): Promise<{ conversationId: string; messages: ChatMessage[] }> {
-    try {
-      const messages = await this.assistant.getConversationMessages(conversationId);
-      return {
-        conversationId,
-        messages
-      };
-    } catch (error) {
-      throw new Error('Conversation not found');
-    }
-  }
-  
-  // DELETE /api/assistant/conversations/:id - Clear conversation
-  async clearConversation(conversationId: string): Promise<{ message: string }> {
-    try {
-      // Note: ConversationRepository interface doesn't have a clear method
-      // For now, we'll return success but this may need to be implemented
-      return { message: 'Conversation cleared successfully' };
-    } catch (error) {
-      throw new Error('Conversation not found');
-    }
-  }
-  
+
   // GET /api/assistant/health - Health check endpoint
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     return {
