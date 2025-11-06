@@ -1,18 +1,21 @@
-import { Assistant } from "backend/assistant/Assistant";
 import { ChatMessage, Conversation } from "backend/models/ChatMessage";
+import { ConversationService } from "@backend/services/conversation/ConversationService";
+import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 
 export class ConversationController {
-  private assistant: Assistant;
-  
+  private conversationService: ConversationService;
+
   constructor() {
-    this.assistant = new Assistant();
+    const repositoryFactory = new ConversationRepositoryFactory();
+    const conversationRepository = repositoryFactory.build();
+    this.conversationService = new ConversationService(conversationRepository);
   }
   
   // GET /api/conversation - Get all conversations
   async getAllConversations(): Promise<Conversation[]> {
     try {
       console.log('getAllConversations');
-      const conversations = await this.assistant.conversationService.getConversations();
+      const conversations = await this.conversationService.getConversations();
 
       return conversations;
     } catch (error) {
@@ -24,7 +27,7 @@ export class ConversationController {
   async getConversation(conversationId: string): Promise<{ conversationId: string; messages: ChatMessage[] }> {
     try {
       console.log('getConversation ', conversationId);
-      const messages = await this.assistant.conversationService.getConversationMessages(conversationId);
+      const messages = await this.conversationService.getConversationMessages(conversationId);
       return {
         conversationId,
         messages
@@ -38,7 +41,7 @@ export class ConversationController {
   async updateConversation(conversationId: string, data: { name: string }): Promise<{ conversationId: string; success: boolean }> {
     try {
       console.log('updateConversation ', conversationId, data.name);
-      await this.assistant.conversationService.updateConversationName(conversationId, data.name);
+      await this.conversationService.updateConversationName(conversationId, data.name);
       return {
         conversationId,
         success: true
