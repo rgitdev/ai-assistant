@@ -10,6 +10,10 @@ ${liliPersona}
 ${chatUsagePrompt}
 `;
 
+/**
+ * @deprecated Use AssistantPromptBuilder instead for centralized prompt construction.
+ * This function is kept for backward compatibility but may be removed in future versions.
+ */
 export const getAssistantSystemPrompt = () => `
 ${liliPersona}
 

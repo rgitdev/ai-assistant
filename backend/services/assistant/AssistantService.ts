@@ -1,6 +1,6 @@
 import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
-import { getAssistantSystemPrompt } from "backend/assistant/prompts/systemPrompt";
+import { AssistantPromptBuilder } from "backend/assistant/AssistantPromptBuilder";
 
 /**
  * Service responsible for OpenAI communication.
@@ -42,5 +42,7 @@ export class AssistantService {
 
 if (require.main === module) {
   const assistant = new AssistantService();
-  assistant.sendMessage(getAssistantSystemPrompt(), "Hello, how are you? what's your name?").then(console.log);
+  const promptBuilder = new AssistantPromptBuilder();
+  const systemPrompt = promptBuilder.buildSystemPrompt();
+  assistant.sendMessage(systemPrompt, "Hello, how are you? what's your name?").then(console.log);
 }

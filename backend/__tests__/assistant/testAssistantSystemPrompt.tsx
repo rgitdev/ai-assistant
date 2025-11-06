@@ -1,4 +1,5 @@
-import { getAssistantSystemPrompt } from "backend/assistant/prompts/systemPrompt";
+import { AssistantPromptBuilder } from "backend/assistant/AssistantPromptBuilder";
 
 console.log("Testing Assistant System Prompt:");
-console.log(getAssistantSystemPrompt());  
+const promptBuilder = new AssistantPromptBuilder();
+console.log(promptBuilder.buildSystemPrompt());  
