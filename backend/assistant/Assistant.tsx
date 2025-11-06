@@ -1,5 +1,4 @@
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
-import { IConversationRepository } from "backend/repository/IConversationRepository";
 import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
@@ -14,7 +13,6 @@ import { ConversationService } from "@backend/services/conversation/Conversation
 export class Assistant {
 
   assistantService: AssistantService;
-  conversationRepository: IConversationRepository;
   conversationService: ConversationService;
   memoryService: MemoryService;
   memorySearchService: MemorySearchService;
@@ -28,11 +26,10 @@ export class Assistant {
     const assistantService = new AssistantService();
     this.assistantService = assistantService;
 
+    // Setup conversation service with repository
     const repositoryFactory = new ConversationRepositoryFactory();
-    this.conversationRepository = repositoryFactory.build();
-
-    // Conversation state management service
-    this.conversationService = new ConversationService(this.conversationRepository);
+    const conversationRepository = repositoryFactory.build();
+    this.conversationService = new ConversationService(conversationRepository);
 
     // Orchestration: Assistant manages memory-related services
     this.memoryService = new MemoryService();
@@ -68,7 +65,7 @@ export class Assistant {
       timestamp: new Date().toISOString()
     };
 
-    await this.conversationRepository.addMessage(conversationId, userChatMessage);
+    await this.conversationService.addMessage(conversationId, userChatMessage);
 
     // Generate and add assistant response
     const response = await this.generateAndAddResponse(conversationId);
@@ -85,7 +82,7 @@ export class Assistant {
    */
   private async generateAndAddResponse(conversationId: string): Promise<string> {
     // Get full conversation history and send to OpenAI
-    const conversationMessages = await this.conversationRepository.getConversationMessages(conversationId);
+    const conversationMessages = await this.conversationService.getConversationMessages(conversationId);
     const openAIMessages: ConversationMessage[] = conversationMessages.map(msg => ({
       role: msg.role,
       content: msg.content
@@ -101,7 +98,7 @@ export class Assistant {
       timestamp: new Date().toISOString()
     };
 
-    await this.conversationRepository.addMessage(conversationId, assistantChatMessage);
+    await this.conversationService.addMessage(conversationId, assistantChatMessage);
 
     return response;
   }
@@ -169,19 +166,19 @@ When discussing time-sensitive topics, always reference the current date and tim
   }
 
   async createConversation(): Promise<string> {
-    return await this.conversationRepository.createConversation();
+    return await this.conversationService.createConversation();
   }
 
   async getConversationMessages(conversationId: string): Promise<ChatMessage[]> {
-    return await this.conversationRepository.getConversationMessages(conversationId);
+    return await this.conversationService.getConversationMessages(conversationId);
   }
 
   async getConversations() {
-    return await this.conversationRepository.getConversations();
+    return await this.conversationService.getConversations();
   }
 
   async updateConversationName(conversationId: string, name: string): Promise<void> {
-    await this.conversationRepository.updateConversationName(conversationId, name);
+    await this.conversationService.updateConversationName(conversationId, name);
   }
 
   /**
