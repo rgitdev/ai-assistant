@@ -3,7 +3,7 @@ import { ConversationRepositoryFactory } from "backend/repository/ConversationRe
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
 import { AssistantService } from "@backend/services/assistant/AssistantService";
-import { getAssistantSystemPrompt, getBaseAssistantSystemPrompt, getMemoryInstructionPrompt } from "@backend/assistant/prompts/systemPrompt";
+import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilder";
 import { MemoryService } from "@backend/services/memory/MemoryService";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { VectorStore } from "@backend/client/vector/VectorStore";
@@ -106,63 +106,49 @@ export class Assistant {
   private async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
 
-    // Orchestrate: Add memory context to messages
-    const enhancedMessages = await this.addMemoryToMessages(messages);
-    console.log("Added memory messages to conversation:", enhancedMessages.length, "messages");
+    // Build prompt using AssistantPromptBuilder
+    const promptBuilder = new AssistantPromptBuilder();
 
-    const fullSystemPrompt = getBaseAssistantSystemPrompt() + "\n\n" + getMemoryInstructionPrompt();
-    const response = await this.assistantService.sendConversation(fullSystemPrompt, enhancedMessages);
+    // Add dynamic content: time context
+    const currentTime = AssistantPromptBuilder.getCurrentTimeString();
+    promptBuilder.withTimeContext(currentTime);
+
+    // Add dynamic content: memory search results and latest memories
+    const memoryMessages = await this.getMemoryMessages(messages[messages.length - 1].content);
+    promptBuilder.withMemoryMessages(memoryMessages);
+
+    // Add dynamic content: conversation messages
+    promptBuilder.withConversationMessages(messages);
+
+    // Build system prompt (static, cacheable content)
+    const systemPrompt = promptBuilder.buildSystemPrompt();
+
+    // Build messages (dynamic content)
+    const enhancedMessages = promptBuilder.buildMessages();
+
+    console.log("Built enhanced messages:", enhancedMessages.length, "messages");
+
+    const response = await this.assistantService.sendConversation(systemPrompt, enhancedMessages);
     return response;
   }
 
   /**
-   * Orchestration method: Add memory context to conversation messages
-   * Combines time context, memory search results, and latest memories
+   * Orchestration method: Gather memory-related messages
+   * Combines memory search results and latest memories
    */
-  private async addMemoryToMessages(messages: ConversationMessage[]): Promise<ConversationMessage[]> {
-    const enhancedMessages: ConversationMessage[] = [];
-
-    // Add time context message
-    const timeContextMessage = this.getCurrentTimeContextMessage();
-    enhancedMessages.push(timeContextMessage);
+  private async getMemoryMessages(latestUserMessage: string): Promise<ConversationMessage[]> {
+    const memoryMessages: ConversationMessage[] = [];
 
     // Add search results from vector store
-    const foundMemories = await this.memorySearchService.searchMemories(messages[messages.length - 1].content);
+    const foundMemories = await this.memorySearchService.searchMemories(latestUserMessage);
 
     // Add latest memory messages
     const lastMemory = await this.memoryService.getMemoriesAsAssistantMessage();
     if (lastMemory) {
-      enhancedMessages.push(lastMemory);
+      memoryMessages.push(lastMemory);
     }
 
-    // Add original conversation messages
-    enhancedMessages.push(...messages);
-
-    return enhancedMessages;
-  }
-
-  /**
-   * Helper method: Create a time context message for the assistant
-   */
-  private getCurrentTimeContextMessage(): ConversationMessage {
-    const currentTime = new Date().toLocaleString('en-US', {
-      timeZone: 'Europe/Berlin',
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-
-    return {
-      role: "assistant",
-      content: `## Current Context
-Current date and time: ${currentTime} (GMT+1/CEST)
-
-When discussing time-sensitive topics, always reference the current date and time provided above to maintain temporal accuracy in your responses.`
-    };
+    return memoryMessages;
   }
 
   /**

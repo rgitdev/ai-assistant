@@ -1,6 +1,6 @@
 import { AssistantService } from "@backend/services/assistant/AssistantService";
 import { ConversationMessage } from "@backend/client/openai/OpenAIService";
-import { getBaseAssistantSystemPrompt } from "backend/assistant/prompts/systemPrompt";
+import { AssistantPromptBuilder } from "backend/assistant/AssistantPromptBuilder";
 
 const assistantService = new AssistantService();
 
@@ -11,10 +11,14 @@ const messages: ConversationMessage[] = [
   },
 ];
 
+// Build system prompt using AssistantPromptBuilder
+const promptBuilder = new AssistantPromptBuilder();
+const systemPrompt = promptBuilder.buildSystemPrompt();
+
 // AssistantService now only handles OpenAI communication
 // Memory orchestration is handled by the Assistant class
 const response = await assistantService.sendConversation(
-  getBaseAssistantSystemPrompt(),
+  systemPrompt,
   messages
 );
 console.log(response);
