@@ -46,7 +46,7 @@ export class Assistant {
    * @returns Object containing the assistant's response and the new conversationId
    */
   async handleNewMessage(message: string): Promise<{ response: string; conversationId: string }> {
-    const conversationId = await this.createConversation();
+    const conversationId = await this.conversationService.createConversation();
     return await this.handleMessage(conversationId, message);
   }
 
@@ -163,22 +163,6 @@ Current date and time: ${currentTime} (GMT+1/CEST)
 
 When discussing time-sensitive topics, always reference the current date and time provided above to maintain temporal accuracy in your responses.`
     };
-  }
-
-  async createConversation(): Promise<string> {
-    return await this.conversationService.createConversation();
-  }
-
-  async getConversationMessages(conversationId: string): Promise<ChatMessage[]> {
-    return await this.conversationService.getConversationMessages(conversationId);
-  }
-
-  async getConversations() {
-    return await this.conversationService.getConversations();
-  }
-
-  async updateConversationName(conversationId: string, name: string): Promise<void> {
-    await this.conversationService.updateConversationName(conversationId, name);
   }
 
   /**

@@ -49,7 +49,7 @@ export class AssistantController {
   // GET /api/assistant/conversations/:id - Get conversation history
   async getConversation(conversationId: string): Promise<{ conversationId: string; messages: ChatMessage[] }> {
     try {
-      const messages = await this.assistant.getConversationMessages(conversationId);
+      const messages = await this.assistant.conversationService.getConversationMessages(conversationId);
       return {
         conversationId,
         messages
