@@ -9,11 +9,13 @@ import { MemoryService } from "@backend/services/memory/MemoryService";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
+import { ConversationService } from "@backend/services/conversation/ConversationService";
 
 export class Assistant {
 
   assistantService: AssistantService;
   conversationRepository: IConversationRepository;
+  conversationService: ConversationService;
   memoryService: MemoryService;
   memorySearchService: MemorySearchService;
 
@@ -28,6 +30,9 @@ export class Assistant {
 
     const repositoryFactory = new ConversationRepositoryFactory();
     this.conversationRepository = repositoryFactory.build();
+
+    // Conversation state management service
+    this.conversationService = new ConversationService(this.conversationRepository);
 
     // Orchestration: Assistant manages memory-related services
     this.memoryService = new MemoryService();
@@ -180,37 +185,10 @@ When discussing time-sensitive topics, always reference the current date and tim
   }
 
   /**
-   * Validates that the given message is the last user message in the conversation
-   * @throws Error if validation fails
-   */
-  private async validateIsLastUserMessage(conversationId: string, messageId: string): Promise<void> {
-    const messages = await this.conversationRepository.getConversationMessages(conversationId);
-
-    if (!messages || messages.length === 0) {
-      throw new Error('Conversation is empty');
-    }
-
-    // Find the last user message
-    const lastUserMessage = [...messages]
-      .filter(m => m.role === 'user')
-      .pop();
-
-    if (!lastUserMessage) {
-      throw new Error('No user message found in conversation');
-    }
-
-    if (lastUserMessage.id !== messageId) {
-      throw new Error('Only the last user message can be edited');
-    }
-  }
-
-  /**
    * Edit the last user message in a conversation and regenerate the assistant's response
    * This will:
-   * 1. Validate that the message is the last user message
-   * 2. Update the message content
-   * 3. Delete all messages after it (including old assistant responses)
-   * 4. Generate a new assistant response
+   * 1. Update the last user message and remove all following messages (via ConversationService)
+   * 2. Generate a new assistant response
    *
    * @param conversationId - The conversation ID
    * @param messageId - The ID of the last user message to edit
@@ -222,16 +200,14 @@ When discussing time-sensitive topics, always reference the current date and tim
     messageId: string,
     newContent: string
   ): Promise<{ response: string; conversationId: string }> {
-    // Step 1: Validate that this is the last user message
-    await this.validateIsLastUserMessage(conversationId, messageId);
+    // Step 1: Update last user message and remove following messages
+    await this.conversationService.updateLastUserMessageAndRemoveFollowing(
+      conversationId,
+      messageId,
+      newContent
+    );
 
-    // Step 2: Update the user message with new content
-    await this.conversationRepository.updateMessage(messageId, newContent);
-
-    // Step 3: Delete all messages after the edited message (old assistant responses)
-    await this.conversationRepository.deleteMessagesAfter(conversationId, messageId);
-
-    // Step 4: Generate and add new assistant response
+    // Step 2: Generate and add new assistant response
     const response = await this.generateAndAddResponse(conversationId);
 
     return { response, conversationId };
