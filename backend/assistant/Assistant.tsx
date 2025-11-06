@@ -5,11 +5,17 @@ import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
 import { AssistantService } from "@backend/services/assistant/AssistantService";
 import { getAssistantSystemPrompt, getBaseAssistantSystemPrompt, getMemoryInstructionPrompt } from "@backend/assistant/prompts/systemPrompt";
+import { MemoryService } from "@backend/services/memory/MemoryService";
+import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
+import { VectorStore } from "@backend/client/vector/VectorStore";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
 export class Assistant {
-  
+
   assistantService: AssistantService;
   conversationRepository: IConversationRepository;
+  memoryService: MemoryService;
+  memorySearchService: MemorySearchService;
 
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -22,6 +28,13 @@ export class Assistant {
 
     const repositoryFactory = new ConversationRepositoryFactory();
     this.conversationRepository = repositoryFactory.build();
+
+    // Orchestration: Assistant manages memory-related services
+    this.memoryService = new MemoryService();
+
+    const vectorStore = new VectorStore();
+    const embeddingService = new OpenAIEmbeddingService();
+    this.memorySearchService = new MemorySearchService(vectorStore, embeddingService);
   }
 
 
@@ -90,12 +103,64 @@ export class Assistant {
 
   private async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
-    const response = await this.assistantService.sendConversationWithMemory(
-      getBaseAssistantSystemPrompt(),
-      getMemoryInstructionPrompt(),
-      messages
-    );
+
+    // Orchestrate: Add memory context to messages
+    const enhancedMessages = await this.addMemoryToMessages(messages);
+    console.log("Added memory messages to conversation:", enhancedMessages.length, "messages");
+
+    const fullSystemPrompt = getBaseAssistantSystemPrompt() + "\n\n" + getMemoryInstructionPrompt();
+    const response = await this.assistantService.sendConversation(fullSystemPrompt, enhancedMessages);
     return response;
+  }
+
+  /**
+   * Orchestration method: Add memory context to conversation messages
+   * Combines time context, memory search results, and latest memories
+   */
+  private async addMemoryToMessages(messages: ConversationMessage[]): Promise<ConversationMessage[]> {
+    const enhancedMessages: ConversationMessage[] = [];
+
+    // Add time context message
+    const timeContextMessage = this.getCurrentTimeContextMessage();
+    enhancedMessages.push(timeContextMessage);
+
+    // Add search results from vector store
+    const foundMemories = await this.memorySearchService.searchMemories(messages[messages.length - 1].content);
+
+    // Add latest memory messages
+    const lastMemory = await this.memoryService.getMemoriesAsAssistantMessage();
+    if (lastMemory) {
+      enhancedMessages.push(lastMemory);
+    }
+
+    // Add original conversation messages
+    enhancedMessages.push(...messages);
+
+    return enhancedMessages;
+  }
+
+  /**
+   * Helper method: Create a time context message for the assistant
+   */
+  private getCurrentTimeContextMessage(): ConversationMessage {
+    const currentTime = new Date().toLocaleString('en-US', {
+      timeZone: 'Europe/Berlin',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    return {
+      role: "assistant",
+      content: `## Current Context
+Current date and time: ${currentTime} (GMT+1/CEST)
+
+When discussing time-sensitive topics, always reference the current date and time provided above to maintain temporal accuracy in your responses.`
+    };
   }
 
   async createConversation(): Promise<string> {
