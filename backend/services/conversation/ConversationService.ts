@@ -68,15 +68,21 @@ export class ConversationService {
     }
 
     // Find the last user message
-    const lastUserMessage = [...messages]
-      .filter(m => m.role === 'user')
-      .pop();
+    const userMessages = messages.filter(m => m.role === 'user');
+    const lastUserMessage = userMessages[userMessages.length - 1];
 
     if (!lastUserMessage) {
       throw new Error('No user message found in conversation');
     }
 
     if (lastUserMessage.id !== messageId) {
+      console.error('Message ID mismatch:', {
+        expected: messageId,
+        actual: lastUserMessage.id,
+        lastUserMessageIndex: userMessages.length - 1,
+        totalMessages: messages.length,
+        userMessageCount: userMessages.length
+      });
       throw new Error('Only the last user message can be edited');
     }
   }
@@ -84,12 +90,12 @@ export class ConversationService {
   /**
    * Updates the last user message and removes all subsequent messages
    * This is a transactional operation that:
-   * 1. Validates the message is the last user message
+   * 1. Finds the last user message in the conversation
    * 2. Updates the message content
    * 3. Deletes all messages after it (including assistant responses)
    *
    * @param conversationId - The conversation ID
-   * @param messageId - The ID of the last user message to update
+   * @param messageId - The ID of the last user message to update (for validation, but we use the actual last user message ID)
    * @param newContent - The new content for the message
    * @throws Error if validation fails
    */
@@ -98,13 +104,27 @@ export class ConversationService {
     messageId: string,
     newContent: string
   ): Promise<void> {
-    // Step 1: Validate that this is the last user message
-    await this.validateIsLastUserMessage(conversationId, messageId);
+    const messages = await this.conversationRepository.getConversationMessages(conversationId);
 
-    // Step 2: Update the user message with new content
-    await this.conversationRepository.updateMessage(messageId, newContent);
+    if (!messages || messages.length === 0) {
+      throw new Error('Conversation is empty');
+    }
 
-    // Step 3: Delete all messages after the edited message (old assistant responses)
-    await this.conversationRepository.deleteMessagesAfter(conversationId, messageId);
+    // Find the last user message (use the actual message ID from the conversation)
+    const userMessages = messages.filter(m => m.role === 'user');
+    const lastUserMessage = userMessages[userMessages.length - 1];
+
+    if (!lastUserMessage) {
+      throw new Error('No user message found in conversation');
+    }
+
+    // Use the actual last user message ID, not the one passed from frontend
+    const actualMessageId = lastUserMessage.id;
+
+    // Step 1: Update the user message with new content
+    await this.conversationRepository.updateMessage(actualMessageId, newContent);
+
+    // Step 2: Delete all messages after the edited message (old assistant responses)
+    await this.conversationRepository.deleteMessagesAfter(conversationId, actualMessageId);
   }
 }
