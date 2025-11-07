@@ -106,24 +106,23 @@ export class Assistant {
   private async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
 
-    // Build prompt using AssistantPromptBuilder
+    // Build prompt using AssistantPromptBuilder with component system
     const promptBuilder = new AssistantPromptBuilder();
 
-    // Add dynamic content: time context
-    const currentTime = AssistantPromptBuilder.getCurrentTimeString();
-    promptBuilder.withTimeContext(currentTime);
+    // Add time context (includes both system instruction and message)
+    promptBuilder.withTimeContext();
 
-    // Add dynamic content: memory search results and latest memories
+    // Add memory context (includes both system instruction and messages)
     const memoryMessages = await this.getMemoryMessages(messages[messages.length - 1].content);
     promptBuilder.withMemoryMessages(memoryMessages);
 
-    // Add dynamic content: conversation messages
+    // Add conversation messages
     promptBuilder.withConversationMessages(messages);
 
-    // Build system prompt (static, cacheable content)
+    // Build system prompt (static, cacheable content with instructions for all components)
     const systemPrompt = promptBuilder.buildSystemPrompt();
 
-    // Build messages (dynamic content)
+    // Build messages (dynamic content: labeled context messages + conversation)
     const enhancedMessages = promptBuilder.buildMessages();
 
     console.log("Built enhanced messages:", enhancedMessages.length, "messages");

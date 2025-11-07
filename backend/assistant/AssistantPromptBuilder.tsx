@@ -1,50 +1,86 @@
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
-import { getBaseAssistantSystemPrompt, getMemoryInstructionPrompt } from "./prompts/systemPrompt";
+import { SystemPromptComponent, MessageComponent } from "./prompts/components/interfaces";
+import { PersonaComponent } from "./prompts/components/PersonaComponent";
+import { ChatUsageComponent } from "./prompts/components/ChatUsageComponent";
+import { TimeContextSystemPromptComponent, TimeContextMessageComponent } from "./prompts/components/TimeContextPromptComponent";
+import { MemorySystemPromptComponent, MemoryMessageComponent } from "./prompts/components/MemoryPromptComponent";
 
 /**
- * Builder class for constructing assistant prompts.
- * Separates static content (cacheable in system prompt) from dynamic content (in messages).
+ * Builder class for constructing assistant prompts using a modular component system.
  *
- * Static content (system prompt):
- * - Persona (character definition)
- * - Chat usage instructions
- * - Memory instructions
+ * Architecture:
+ * - System prompt (static, cacheable): Contains instructions about how to interpret labeled messages
+ * - Messages (dynamic): Contains actual data prefixed with labels
  *
- * Dynamic content (messages):
- * - Time context
- * - Memory search results
- * - Conversation history
+ * Example:
+ * System Prompt: "Messages labeled 'MEMORY MESSAGE:' contain your memories..."
+ * Messages: [{ role: "assistant", content: "MEMORY MESSAGE: User prefers technical details..." }]
+ *
+ * This separation enables:
+ * - OpenAI prompt caching for static instructions
+ * - Clear labeling of message purposes
+ * - Easy extensibility by adding new component pairs
  */
 export class AssistantPromptBuilder {
-  private timeContext: string | null = null;
-  private memoryMessages: ConversationMessage[] = [];
+  private systemComponents: SystemPromptComponent[] = [];
+  private messageComponents: MessageComponent[] = [];
   private conversationMessages: ConversationMessage[] = [];
 
-  /**
-   * Build the static system prompt (cacheable content)
-   */
-  buildSystemPrompt(): string {
-    return getBaseAssistantSystemPrompt() + "\n\n" + getMemoryInstructionPrompt();
+  constructor() {
+    // Always include base components (persona and chat usage)
+    this.systemComponents.push(new PersonaComponent());
+    this.systemComponents.push(new ChatUsageComponent());
   }
 
   /**
-   * Add time context message (dynamic content)
+   * Register a component pair: system instruction + optional message generator
+   *
+   * @param systemComp - Component that provides static instruction for system prompt
+   * @param messageComp - Optional component that generates dynamic messages
    */
-  withTimeContext(currentTime: string): this {
-    this.timeContext = currentTime;
+  registerComponent(
+    systemComp: SystemPromptComponent,
+    messageComp?: MessageComponent
+  ): this {
+    this.systemComponents.push(systemComp);
+    if (messageComp) {
+      this.messageComponents.push(messageComp);
+    }
     return this;
   }
 
   /**
-   * Add memory messages (dynamic content)
+   * Add time context to the conversation.
+   * Registers both the instruction and the message component.
+   */
+  withTimeContext(): this {
+    return this.registerComponent(
+      new TimeContextSystemPromptComponent(),
+      new TimeContextMessageComponent()
+    );
+  }
+
+  /**
+   * Add memory messages to the conversation.
+   * Registers both the instruction and the message component.
+   *
+   * @param messages - Memory messages from previous conversations
    */
   withMemoryMessages(messages: ConversationMessage[]): this {
-    this.memoryMessages = messages;
+    if (messages.length > 0) {
+      return this.registerComponent(
+        new MemorySystemPromptComponent(),
+        new MemoryMessageComponent(messages)
+      );
+    }
     return this;
   }
 
   /**
-   * Add conversation messages (dynamic content)
+   * Add conversation messages (user and assistant messages).
+   * These are appended after all context messages.
+   *
+   * @param messages - Conversation history
    */
   withConversationMessages(messages: ConversationMessage[]): this {
     this.conversationMessages = messages;
@@ -52,56 +88,35 @@ export class AssistantPromptBuilder {
   }
 
   /**
-   * Build the complete message array with dynamic content in correct order:
-   * 1. Time context (if provided)
-   * 2. Memory messages (if any)
-   * 3. Conversation history
+   * Build the static system prompt from all registered components.
+   * This is cacheable by OpenAI for better performance.
+   */
+  buildSystemPrompt(): string {
+    return this.systemComponents
+      .map(comp => comp.getInstruction())
+      .join('\n\n');
+  }
+
+  /**
+   * Build the complete message array in correct order:
+   * 1. Context messages (time, memory, etc.) with labels
+   * 2. Conversation history (user/assistant messages)
    */
   buildMessages(): ConversationMessage[] {
-    const messages: ConversationMessage[] = [];
+    const contextMessages = this.messageComponents
+      .flatMap(comp => comp.buildMessages());
 
-    // Add time context message if provided
-    if (this.timeContext) {
-      messages.push({
-        role: "assistant",
-        content: `## Current Context
-Current date and time: ${this.timeContext} (GMT+1/CEST)
-
-When discussing time-sensitive topics, always reference the current date and time provided above to maintain temporal accuracy in your responses.`
-      });
-    }
-
-    // Add memory messages (search results, latest memories, etc.)
-    messages.push(...this.memoryMessages);
-
-    // Add original conversation messages
-    messages.push(...this.conversationMessages);
-
-    return messages;
+    return [...contextMessages, ...this.conversationMessages];
   }
 
   /**
-   * Helper method to create a time context string in the expected format
-   */
-  static getCurrentTimeString(): string {
-    return new Date().toLocaleString('en-US', {
-      timeZone: 'Europe/Berlin',
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  }
-
-  /**
-   * Reset the builder to clean state
+   * Reset the builder to clean state.
+   * Note: Keeps base components (persona, chat usage) but clears registered components.
    */
   reset(): this {
-    this.timeContext = null;
-    this.memoryMessages = [];
+    // Keep only the base components
+    this.systemComponents = [new PersonaComponent(), new ChatUsageComponent()];
+    this.messageComponents = [];
     this.conversationMessages = [];
     return this;
   }
