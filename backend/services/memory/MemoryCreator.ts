@@ -1,12 +1,9 @@
-import { ChatMessage } from "backend/models/ChatMessage";
 import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryRecord, MemoryCategory } from "backend/models/Memory";
-import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
-import { userProfileSystemPrompt } from "@backend/services/memory/prompts/userProfileSystemPrompt";
-import { assistantPersonaSystemPrompt } from "@backend/services/memory/prompts/assistantPersonaSystemPrompt";
+import { CreateMemoryCommand } from "./commands/CreateMemoryCommand";
 import { z } from "zod";
 
 const CreatedMemoryResponseSchema = z.object({
@@ -18,12 +15,13 @@ type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 
 /**
  * Service responsible for creating and storing memories from conversations.
- * Handles memory creation with OpenAI and persists to repository.
+ * Contains all business logic for memory creation.
+ * Commands are simple data structures with configuration baked in.
  */
 export class MemoryCreator {
   private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
-  private readonly overwrite: boolean = false;
+  private readonly overwrite: boolean;
 
   constructor() {
     const openAIFactory = new OpenAIServiceFactory();
@@ -31,81 +29,25 @@ export class MemoryCreator {
 
     const memoryRepoFactory = new MemoryRepositoryFactory();
     this.memoryRepository = memoryRepoFactory.build();
+
+    this.overwrite = false;
   }
 
   /**
-   * Creates a memory record summarizing a conversation.
-   * - Uses OpenAI to generate a structured JSON memory (title, content, tags, importance)
-   * - Persists the memory using the configured memory repository
+   * Creates a memory record from a command.
+   * Checks for duplicates and persists the memory.
    *
-   * @param conversationId Unique conversation identifier
-   * @param messages Conversation messages in chronological order
+   * @param command Command containing conversationId, messages, category, and systemPrompt
    * @returns The persisted memory record
    */
-  public async createMemoryForConversation(
-    conversationId: string,
-    messages: ChatMessage[]
-  ): Promise<MemoryRecord> {
-    return this.createMemoryForCategoryInternal(
+  public async createMemory(command: CreateMemoryCommand): Promise<MemoryRecord> {
+    const { conversationId, messages, memoryCategory, systemPrompt } = command;
+
+    const createInput = await this.createMemoryInput(
       conversationId,
       messages,
-      memorySystemPrompt,
-      MemoryCategory.CONVERSATION);
-  }
-
-  /**
-   * Creates a memory record for collecting user information from a conversation.
-   * - Uses OpenAI to generate a structured JSON memory focused on user information
-   * - Persists the memory using the configured memory repository
-   *
-   * @param conversationId Unique conversation identifier
-   * @param messages Conversation messages in chronological order
-   * @returns The persisted memory record
-   */
-  public async createMemoryForCollectingUserInformation(
-    conversationId: string,
-    messages: ChatMessage[]
-  ): Promise<MemoryRecord> {
-    return this.createMemoryForCategoryInternal(
-      conversationId,
-      messages,
-      userProfileSystemPrompt,
-      MemoryCategory.USER_PROFILE);
-  }
-
-  /**
-   * Creates a memory record for collecting assistant persona information from a conversation.
-   * - Uses OpenAI to generate a structured JSON memory focused on assistant characteristics and preferences
-   * - Persists the memory using the configured memory repository
-   * - Helps maintain consistency in assistant behavior across conversations
-   *
-   * @param conversationId Unique conversation identifier
-   * @param messages Conversation messages in chronological order
-   * @returns The persisted memory record
-   */
-  public async createMemoryForCollectingAssistantPersona(
-    conversationId: string,
-    messages: ChatMessage[]
-  ): Promise<MemoryRecord> {
-    return this.createMemoryForCategoryInternal(
-      conversationId,
-      messages,
-      assistantPersonaSystemPrompt,
-      MemoryCategory.ASSISTANT_PERSONA);
-  }
-
-  private async createMemoryForCategoryInternal(
-    conversationId: string,
-    messages: ChatMessage[],
-    systemPrompt: string,
-    category: MemoryCategory): Promise<MemoryRecord> {
-
-    const createInput = await this.createMemoryInputFromConversation(
-      conversationId,
-      messages,
-      systemPrompt,
-      "conversation",
-      category
+      memoryCategory,
+      systemPrompt
     );
 
     const prevRecords = await this.memoryRepository.findMemoryBySource({
@@ -113,7 +55,7 @@ export class MemoryCreator {
       reference: conversationId,
     });
 
-    const previousMatchingMemory = prevRecords.find(r => r.category === category);
+    const previousMatchingMemory = prevRecords.find(r => r.category === memoryCategory);
 
     if (previousMatchingMemory && !this.overwrite) {
       return previousMatchingMemory;
@@ -122,31 +64,23 @@ export class MemoryCreator {
     console.log("Checking previous memories for conversation: ", conversationId, prevRecords.map(r => r.id));
     const record = await this.memoryRepository.createMemory(createInput);
     console.log("Created memory: ", record.id);
+
     if (previousMatchingMemory) {
       console.log("Deleting previous memories", previousMatchingMemory.id);
       // await Promise.all(prevRecords.map(r => this.memoryRepository.deleteMemory(r.id)));
     }
+
     return record;
   }
 
-
   /**
-   * Creates a MemoryCreateInput from conversation data using the specified system prompt.
-   * This is a helper method to avoid code duplication.
-   *
-   * @param conversationId Unique conversation identifier
-   * @param messages Conversation messages in chronological order
-   * @param systemPrompt The system prompt text to use for memory generation
-   * @param memoryType The type of memory being created
-   * @param category The memory category
-   * @returns MemoryCreateInput ready for repository creation
+   * Creates the memory input by calling OpenAI and formatting the response.
    */
-  private async createMemoryInputFromConversation(
+  private async createMemoryInput(
     conversationId: string,
-    messages: ChatMessage[],
-    systemPrompt: string,
-    memoryType: string,
-    category: MemoryCategory
+    messages: any[],
+    category: MemoryCategory,
+    systemPrompt: string
   ): Promise<MemoryCreateInput> {
     if (!conversationId || conversationId.trim().length === 0) {
       throw new Error("conversationId is required");
@@ -160,7 +94,6 @@ export class MemoryCreator {
       content: m.content,
     }));
 
-    // Ask OpenAI to produce a JSON memory object based on the conversation
     const responseRawJson = await this.openAIService.sendMessages(
       systemPrompt,
       openAIMessages
@@ -171,6 +104,9 @@ export class MemoryCreator {
     const title = responseJson.title;
     const content = responseJson.memory;
     const importance = 3;
+
+    // Derive the creator name from the category
+    const createdBy = `MemoryCreator.createMemory`;
 
     return {
       title,
@@ -190,8 +126,8 @@ export class MemoryCreator {
       metadata: {
         conversationId,
         messageCount: messages.length,
-        createdFrom: memoryType,
-        createdBy: "MemoryCreator",
+        createdFrom: "conversation",
+        createdBy,
       },
     };
   }

@@ -2,6 +2,9 @@ import { ChatMessage } from "@backend/models/ChatMessage";
 import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
 import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
 import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
+import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
+import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
+import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -35,9 +38,12 @@ console.log("Using test file:", process.env.MEMORY_TEST_FILE);
 const memoryCreator = new MemoryCreator();
 console.log("Creating memories from conversation...");
 try {
-  await memoryCreator.createMemoryForConversation("integration-test-1", messages);
-  await memoryCreator.createMemoryForCollectingUserInformation("integration-test-1", messages);
-  await memoryCreator.createMemoryForCollectingAssistantPersona("integration-test-1", messages);
+  const command1 = CreateConversationMemoryCommand("integration-test-1", messages);
+  await memoryCreator.createMemory(command1);
+  const command2 = CreateUserProfileMemoryCommand("integration-test-1", messages);
+  await memoryCreator.createMemory(command2);
+  const command3 = CreateAssistantPersonaMemoryCommand("integration-test-1", messages);
+  await memoryCreator.createMemory(command3);
   console.log("Memories created successfully!");
 } catch (error) {
   console.error("Error creating memories:", error);
