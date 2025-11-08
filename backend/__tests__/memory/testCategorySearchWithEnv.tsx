@@ -1,6 +1,9 @@
 import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
 import { ChatMessage } from "@backend/models/ChatMessage";
+import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
+import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
+import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -37,13 +40,16 @@ const sampleMessages: ChatMessage[] = [
 // Create some memories first
 console.log("Creating memories...");
 try {
-  const memory1 = await memoryCreator.createMemoryForConversation("test-conversation-env-1", sampleMessages);
+  const command1 = CreateConversationMemoryCommand("test-conversation-env-1", sampleMessages);
+  const memory1 = await memoryCreator.createMemory(command1);
   console.log("Created memory 1:", memory1.title, "Category:", memory1.category);
 
-  const memory2 = await memoryCreator.createMemoryForCollectingUserInformation("test-conversation-env-1", sampleMessages);
+  const command2 = CreateUserProfileMemoryCommand("test-conversation-env-1", sampleMessages);
+  const memory2 = await memoryCreator.createMemory(command2);
   console.log("Created memory 2:", memory2.title, "Category:", memory2.category);
 
-  const memory3 = await memoryCreator.createMemoryForCollectingAssistantPersona("test-conversation-env-1", sampleMessages);
+  const command3 = CreateAssistantPersonaMemoryCommand("test-conversation-env-1", sampleMessages);
+  const memory3 = await memoryCreator.createMemory(command3);
   console.log("Created memory 3:", memory3.title, "Category:", memory3.category);
 } catch (error) {
   console.error("Error creating memories:", error);
