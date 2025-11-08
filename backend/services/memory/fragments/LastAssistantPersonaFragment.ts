@@ -1,9 +1,6 @@
-import { MemoryFragment } from "./MemoryFragment";
+import { MemoryFragment, MemoryFragmentType, SystemPromptConfig } from "./MemoryFragment";
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
-
-const createAssistantPersonaSystemPrompt = {
-  name: "createAssistantPersonaSystemPrompt",
-};
+import { assistantPersonaSystemPrompt } from "@backend/services/memory/prompts/assistantPersonaSystemPrompt";
 
 /**
  * Fragment for retrieving the latest assistant persona memory.
@@ -11,9 +8,17 @@ const createAssistantPersonaSystemPrompt = {
 export class LastAssistantPersonaFragment implements MemoryFragment {
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
+  getCreationSystemPrompt(): SystemPromptConfig {
+    return {
+      name: MemoryFragmentType.ASSISTANT_PERSONA,
+      prompt: assistantPersonaSystemPrompt,
+    };
+  }
+
   async getMemory(): Promise<string | null> {
+    const systemPrompt = this.getCreationSystemPrompt();
     const assistantPersonaMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createAssistantPersonaSystemPrompt.name,
+      systemPrompt: systemPrompt.name,
     });
 
     const lastAssistantPersonaMemory = assistantPersonaMemory.sort(

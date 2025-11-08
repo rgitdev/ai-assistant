@@ -4,9 +4,10 @@ import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryRecord, MemoryCategory } from "backend/models/Memory";
-import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
-import { userProfileSystemPrompt } from "@backend/services/memory/prompts/userProfileSystemPrompt";
-import { assistantPersonaSystemPrompt } from "@backend/services/memory/prompts/assistantPersonaSystemPrompt";
+import { SystemPromptConfig } from "@backend/services/memory/fragments/MemoryFragment";
+import { LastConversationFragment } from "@backend/services/memory/fragments/LastConversationFragment";
+import { LastUserProfileFragment } from "@backend/services/memory/fragments/LastUserProfileFragment";
+import { LastAssistantPersonaFragment } from "@backend/services/memory/fragments/LastAssistantPersonaFragment";
 import { z } from "zod";
 
 const CreatedMemoryResponseSchema = z.object({
@@ -16,26 +17,6 @@ const CreatedMemoryResponseSchema = z.object({
 
 type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 
-type SystemPrompt = {
-  name: string;
-  prompt: string;
-}
-
-const createMemorySystemPrompt = {
-  name: "createMemorySystemPrompt",
-  prompt: memorySystemPrompt,
-}
-
-const createUserProfileSystemPrompt = {
-  name: "userProfileSystemPrompt",
-  prompt: userProfileSystemPrompt,
-}
-
-const createAssistantPersonaSystemPrompt = {
-  name: "createAssistantPersonaSystemPrompt",
-  prompt: assistantPersonaSystemPrompt,
-}
-
 /**
  * Service responsible for creating and storing memories from conversations.
  * Handles memory creation with OpenAI and persists to repository.
@@ -43,6 +24,11 @@ const createAssistantPersonaSystemPrompt = {
 export class MemoryCreator {
   private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
+
+  // Fragment instances used to get system prompt configurations
+  private readonly conversationFragment: LastConversationFragment;
+  private readonly userProfileFragment: LastUserProfileFragment;
+  private readonly assistantPersonaFragment: LastAssistantPersonaFragment;
 
   private readonly overwrite: boolean = false;
 
@@ -52,6 +38,11 @@ export class MemoryCreator {
 
     const memoryRepoFactory = new MemoryRepositoryFactory();
     this.memoryRepository = memoryRepoFactory.build();
+
+    // Initialize fragments to access their system prompt configurations
+    this.conversationFragment = new LastConversationFragment(this.memoryRepository);
+    this.userProfileFragment = new LastUserProfileFragment(this.memoryRepository);
+    this.assistantPersonaFragment = new LastAssistantPersonaFragment(this.memoryRepository);
   }
 
   /**
@@ -70,7 +61,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      createMemorySystemPrompt,
+      this.conversationFragment.getCreationSystemPrompt(),
       MemoryCategory.CONVERSATION);
   }
 
@@ -90,7 +81,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      createUserProfileSystemPrompt,
+      this.userProfileFragment.getCreationSystemPrompt(),
       MemoryCategory.USER_PROFILE);
   }
 
@@ -111,14 +102,14 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      createAssistantPersonaSystemPrompt,
+      this.assistantPersonaFragment.getCreationSystemPrompt(),
       MemoryCategory.ASSISTANT_PERSONA);
   }
 
   private async createMemoryForCategoryInternal(
     conversationId: string,
     messages: ChatMessage[],
-    systemPrompt: SystemPrompt,
+    systemPrompt: SystemPromptConfig,
     category: MemoryCategory): Promise<MemoryRecord> {
 
     const createInput = await this.createMemoryInputFromConversation(
@@ -165,7 +156,7 @@ export class MemoryCreator {
   private async createMemoryInputFromConversation(
     conversationId: string,
     messages: ChatMessage[],
-    systemPrompt: SystemPrompt,
+    systemPrompt: SystemPromptConfig,
     memoryType: string,
     category: MemoryCategory
   ): Promise<MemoryCreateInput> {
