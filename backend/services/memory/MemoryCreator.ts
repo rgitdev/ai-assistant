@@ -3,10 +3,10 @@ import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAI
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
-import { MemoryRecord, MemoryCategory, MEMORY_SYSTEM_PROMPT_NAMES } from "backend/models/Memory";
-import { LastConversationFragment } from "@backend/services/memory/fragments/LastConversationFragment";
-import { LastUserProfileFragment } from "@backend/services/memory/fragments/LastUserProfileFragment";
-import { LastAssistantPersonaFragment } from "@backend/services/memory/fragments/LastAssistantPersonaFragment";
+import { MemoryRecord, MemoryCategory } from "backend/models/Memory";
+import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
+import { userProfileSystemPrompt } from "@backend/services/memory/prompts/userProfileSystemPrompt";
+import { assistantPersonaSystemPrompt } from "@backend/services/memory/prompts/assistantPersonaSystemPrompt";
 import { z } from "zod";
 
 const CreatedMemoryResponseSchema = z.object({
@@ -23,12 +23,6 @@ type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 export class MemoryCreator {
   private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
-
-  // Fragment instances used to get system prompt configurations
-  private readonly conversationFragment: LastConversationFragment;
-  private readonly userProfileFragment: LastUserProfileFragment;
-  private readonly assistantPersonaFragment: LastAssistantPersonaFragment;
-
   private readonly overwrite: boolean = false;
 
   constructor() {
@@ -37,11 +31,6 @@ export class MemoryCreator {
 
     const memoryRepoFactory = new MemoryRepositoryFactory();
     this.memoryRepository = memoryRepoFactory.build();
-
-    // Initialize fragments to access their system prompt configurations
-    this.conversationFragment = new LastConversationFragment(this.memoryRepository);
-    this.userProfileFragment = new LastUserProfileFragment(this.memoryRepository);
-    this.assistantPersonaFragment = new LastAssistantPersonaFragment(this.memoryRepository);
   }
 
   /**
@@ -60,7 +49,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      this.conversationFragment.getCreationSystemPrompt(),
+      memorySystemPrompt,
       MemoryCategory.CONVERSATION);
   }
 
@@ -80,7 +69,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      this.userProfileFragment.getCreationSystemPrompt(),
+      userProfileSystemPrompt,
       MemoryCategory.USER_PROFILE);
   }
 
@@ -101,7 +90,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      this.assistantPersonaFragment.getCreationSystemPrompt(),
+      assistantPersonaSystemPrompt,
       MemoryCategory.ASSISTANT_PERSONA);
   }
 
@@ -119,13 +108,12 @@ export class MemoryCreator {
       category
     );
 
-    const systemPromptName = MEMORY_SYSTEM_PROMPT_NAMES[category]!;
     const prevRecords = await this.memoryRepository.findMemoryBySource({
       type: "chat",
       reference: conversationId,
     });
 
-    const previousMatchingMemory = prevRecords.find(r => r.metadata?.systemPrompt === systemPromptName);
+    const previousMatchingMemory = prevRecords.find(r => r.category === category);
 
     if (previousMatchingMemory && !this.overwrite) {
       return previousMatchingMemory;
@@ -184,8 +172,6 @@ export class MemoryCreator {
     const content = responseJson.memory;
     const importance = 3;
 
-    const systemPromptName = MEMORY_SYSTEM_PROMPT_NAMES[category]!;
-
     return {
       title,
       content,
@@ -206,7 +192,6 @@ export class MemoryCreator {
         messageCount: messages.length,
         createdFrom: memoryType,
         createdBy: "MemoryCreator",
-        systemPrompt: systemPromptName,
       },
     };
   }

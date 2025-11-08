@@ -1,7 +1,6 @@
 import { MemoryFragment } from "./MemoryFragment";
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
 import { MemoryCategory } from "backend/models/Memory";
-import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
 
 /**
  * Fragment for retrieving the latest conversation memory.
@@ -10,10 +9,6 @@ export class LastConversationFragment implements MemoryFragment {
   readonly category = MemoryCategory.CONVERSATION;
 
   constructor(private readonly memoryRepository: IMemoryRepository) {}
-
-  getCreationSystemPrompt(): string {
-    return memorySystemPrompt;
-  }
 
   async getMemory(): Promise<string | null> {
     const memories = await this.memoryRepository.findMemoriesByCategory(this.category);
