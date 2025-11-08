@@ -1,24 +1,24 @@
-import { MemoryFragment, MemoryFragmentType, SystemPromptConfig } from "./MemoryFragment";
+import { MemoryFragment } from "./MemoryFragment";
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
+import { MemoryCategory, MEMORY_SYSTEM_PROMPT_NAMES } from "backend/models/Memory";
 import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
 
 /**
  * Fragment for retrieving the latest conversation memory.
  */
 export class LastConversationFragment implements MemoryFragment {
+  readonly category = MemoryCategory.CONVERSATION;
+
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
-  getCreationSystemPrompt(): SystemPromptConfig {
-    return {
-      name: MemoryFragmentType.CONVERSATION,
-      prompt: memorySystemPrompt,
-    };
+  getCreationSystemPrompt(): string {
+    return memorySystemPrompt;
   }
 
   async getMemory(): Promise<string | null> {
-    const systemPrompt = this.getCreationSystemPrompt();
+    const systemPromptName = MEMORY_SYSTEM_PROMPT_NAMES[this.category]!;
     const memories = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: systemPrompt.name,
+      systemPrompt: systemPromptName,
     });
 
     const memory = memories.sort(

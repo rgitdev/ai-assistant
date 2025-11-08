@@ -12,6 +12,17 @@ export enum MemoryCategory {
 }
 
 /**
+ * Maps MemoryCategory to system prompt names used for memory creation.
+ * This provides the link between business domain categories and the system prompt identifiers
+ * stored in metadata for fragment lookups.
+ */
+export const MEMORY_SYSTEM_PROMPT_NAMES: Partial<Record<MemoryCategory, string>> = {
+  [MemoryCategory.CONVERSATION]: "createMemorySystemPrompt",
+  [MemoryCategory.USER_PROFILE]: "userProfileSystemPrompt",
+  [MemoryCategory.ASSISTANT_PERSONA]: "createAssistantPersonaSystemPrompt",
+};
+
+/**
  * Parses a string to MemoryCategory enum with case-insensitive lookup
  * @param categoryString The category string to parse
  * @returns The corresponding MemoryCategory enum value or OTHER if not found

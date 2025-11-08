@@ -1,20 +1,4 @@
-/**
- * Centralized type definition for all fragment creation names.
- * This eliminates duplication across fragment implementations and MemoryCreator.
- */
-export enum MemoryFragmentType {
-  CONVERSATION = "createMemorySystemPrompt",
-  USER_PROFILE = "userProfileSystemPrompt",
-  ASSISTANT_PERSONA = "createAssistantPersonaSystemPrompt",
-}
-
-/**
- * System prompt configuration for memory creation.
- */
-export interface SystemPromptConfig {
-  name: string;
-  prompt: string;
-}
+import { MemoryCategory } from "backend/models/Memory";
 
 /**
  * Interface for memory fragments that can be composed together.
@@ -22,15 +6,21 @@ export interface SystemPromptConfig {
  */
 export interface MemoryFragment {
   /**
+   * The memory category this fragment handles.
+   * Used to determine the system prompt name for memory creation and retrieval.
+   */
+  readonly category: MemoryCategory;
+
+  /**
+   * Returns the system prompt text used for creating this fragment type.
+   * This allows fragments to be the single source of truth for their creation prompts.
+   * @returns The system prompt text
+   */
+  getCreationSystemPrompt(): string;
+
+  /**
    * Returns the formatted memory content.
    * @returns A Promise resolving to string content or null if no memory exists
    */
   getMemory(): Promise<string | null>;
-
-  /**
-   * Returns the system prompt configuration used for creating this fragment type.
-   * This allows fragments to be the single source of truth for their creation prompts.
-   * @returns The system prompt configuration with name and prompt content
-   */
-  getCreationSystemPrompt(): SystemPromptConfig;
 }

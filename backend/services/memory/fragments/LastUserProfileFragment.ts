@@ -1,24 +1,24 @@
-import { MemoryFragment, MemoryFragmentType, SystemPromptConfig } from "./MemoryFragment";
+import { MemoryFragment } from "./MemoryFragment";
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
+import { MemoryCategory, MEMORY_SYSTEM_PROMPT_NAMES } from "backend/models/Memory";
 import { userProfileSystemPrompt } from "@backend/services/memory/prompts/userProfileSystemPrompt";
 
 /**
  * Fragment for retrieving the latest user profile memory.
  */
 export class LastUserProfileFragment implements MemoryFragment {
+  readonly category = MemoryCategory.USER_PROFILE;
+
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
-  getCreationSystemPrompt(): SystemPromptConfig {
-    return {
-      name: MemoryFragmentType.USER_PROFILE,
-      prompt: userProfileSystemPrompt,
-    };
+  getCreationSystemPrompt(): string {
+    return userProfileSystemPrompt;
   }
 
   async getMemory(): Promise<string | null> {
-    const systemPrompt = this.getCreationSystemPrompt();
+    const systemPromptName = MEMORY_SYSTEM_PROMPT_NAMES[this.category]!;
     const userProfileMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: systemPrompt.name,
+      systemPrompt: systemPromptName,
     });
 
     const lastUserProfileMemory = userProfileMemory.sort(
