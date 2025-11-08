@@ -14,7 +14,7 @@ export class SchedulerInitializer {
 
     // Register all default jobs
     this.schedulerService.registerJob(new ConversationIndexingJob());
-    this.schedulerService.registerJob(new AssistantMemoryJob());
+    // this.schedulerService.registerJob(new AssistantMemoryJob()); // Disabled for now
 
     // Start the scheduler
     await this.schedulerService.start();
