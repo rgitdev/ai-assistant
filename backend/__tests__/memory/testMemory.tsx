@@ -1,8 +1,10 @@
 import { ConversationRepositoryFactory } from "@backend/repository/ConversationRepositoryFactory";
 import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 
-const memoryCreator = new MemoryCreator();
+const assistantService = new AssistantService();
+const memoryCreator = new MemoryCreator(assistantService);
 const conversationRepository = new ConversationRepositoryFactory().build();
 const messages = await conversationRepository.getConversationMessages("conv_mfbmdwx8fbao052155");
 const command = CreateConversationMemoryCommand("conv_mfbmdwx8fbao052155", messages);

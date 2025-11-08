@@ -1,31 +1,21 @@
-import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAIService";
-import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryRecord, MemoryCategory } from "backend/models/Memory";
 import { CreateMemoryCommand } from "./commands/CreateMemoryCommand";
-import { z } from "zod";
-
-const CreatedMemoryResponseSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  memory: z.string().min(1, "Memory content is required"),
-});
-
-type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
+import { AssistantService } from "backend/services/assistant/AssistantService";
 
 /**
  * Service responsible for creating and storing memories from conversations.
- * Contains all business logic for memory creation.
+ * Uses AssistantService for OpenAI interaction (separation of concerns).
  * Commands are simple data structures with configuration baked in.
  */
 export class MemoryCreator {
-  private readonly openAIService: OpenAIService;
+  private readonly assistantService: AssistantService;
   private readonly memoryRepository: IMemoryRepository;
   private readonly overwrite: boolean;
 
-  constructor() {
-    const openAIFactory = new OpenAIServiceFactory();
-    this.openAIService = openAIFactory.build();
+  constructor(assistantService: AssistantService) {
+    this.assistantService = assistantService;
 
     const memoryRepoFactory = new MemoryRepositoryFactory();
     this.memoryRepository = memoryRepoFactory.build();
@@ -74,7 +64,8 @@ export class MemoryCreator {
   }
 
   /**
-   * Creates the memory input by calling OpenAI and formatting the response.
+   * Creates the memory input by using AssistantService for OpenAI interaction.
+   * AssistantService handles the LLM call and returns the parsed response.
    */
   private async createMemoryInput(
     conversationId: string,
@@ -85,24 +76,15 @@ export class MemoryCreator {
     if (!conversationId || conversationId.trim().length === 0) {
       throw new Error("conversationId is required");
     }
-    if (!messages || messages.length === 0) {
-      throw new Error("messages are required to create a memory");
-    }
 
-    const openAIMessages: ConversationMessage[] = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-
-    const responseRawJson = await this.openAIService.sendMessages(
+    // Delegate OpenAI interaction to AssistantService
+    const memoryResponse = await this.assistantService.createMemoryInput(
       systemPrompt,
-      openAIMessages
+      messages
     );
 
-    const responseJson = JSON.parse(responseRawJson) as CreatedMemoryResponse;
-
-    const title = responseJson.title;
-    const content = responseJson.memory;
+    const title = memoryResponse.title;
+    const content = memoryResponse.memory;
     const importance = 3;
 
     // Derive the creator name from the category

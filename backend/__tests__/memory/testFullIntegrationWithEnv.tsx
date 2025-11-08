@@ -5,6 +5,7 @@ import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -35,7 +36,8 @@ console.log("=== Full Memory Integration Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
 
 // Create memories first
-const memoryCreator = new MemoryCreator();
+const assistantService = new AssistantService();
+const memoryCreator = new MemoryCreator(assistantService);
 console.log("Creating memories from conversation...");
 try {
   const command1 = CreateConversationMemoryCommand("integration-test-1", messages);

@@ -3,12 +3,14 @@ import { ChatMessage } from "@backend/models/ChatMessage";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
 
 // Test category mapping directly
-const memoryCreator = new MemoryCreator();
+const assistantService = new AssistantService();
+const memoryCreator = new MemoryCreator(assistantService);
 
 console.log("=== Category Mapping Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
