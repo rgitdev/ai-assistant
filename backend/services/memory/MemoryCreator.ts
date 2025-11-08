@@ -35,14 +35,17 @@ const createAssistantPersonaSystemPrompt = {
   name: "createAssistantPersonaSystemPrompt",
   prompt: assistantPersonaSystemPrompt,
 }
+
 /**
  * Service responsible for creating and storing memories from conversations.
+ * Handles memory creation with OpenAI and persists to repository.
  */
-export class MemoryService {
+export class MemoryCreator {
   private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
 
   private readonly overwrite: boolean = false;
+
   constructor() {
     const openAIFactory = new OpenAIServiceFactory();
     this.openAIService = openAIFactory.build();
@@ -65,8 +68,8 @@ export class MemoryService {
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
     return this.createMemoryForCategoryInternal(
-      conversationId, 
-      messages, 
+      conversationId,
+      messages,
       createMemorySystemPrompt,
       MemoryCategory.CONVERSATION);
   }
@@ -85,8 +88,8 @@ export class MemoryService {
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
     return this.createMemoryForCategoryInternal(
-      conversationId, 
-      messages, 
+      conversationId,
+      messages,
       createUserProfileSystemPrompt,
       MemoryCategory.USER_PROFILE);
   }
@@ -106,18 +109,18 @@ export class MemoryService {
     messages: ChatMessage[]
   ): Promise<MemoryRecord> {
     return this.createMemoryForCategoryInternal(
-      conversationId, 
-      messages, 
+      conversationId,
+      messages,
       createAssistantPersonaSystemPrompt,
       MemoryCategory.ASSISTANT_PERSONA);
   }
 
-    public async createMemoryForCategoryInternal(
-      conversationId: string,
-      messages: ChatMessage[],
-      systemPrompt: SystemPrompt,
-      category: MemoryCategory): Promise<MemoryRecord> {
-  
+  private async createMemoryForCategoryInternal(
+    conversationId: string,
+    messages: ChatMessage[],
+    systemPrompt: SystemPrompt,
+    category: MemoryCategory): Promise<MemoryRecord> {
+
     const createInput = await this.createMemoryInputFromConversation(
       conversationId,
       messages,
@@ -125,12 +128,12 @@ export class MemoryService {
       "conversation",
       category
     );
-    
+
     const prevRecords = await this.memoryRepository.findMemoryBySource({
       type: "chat",
       reference: conversationId,
     });
-    
+
     const previousMatchingMemory = prevRecords.find(r => r.metadata?.systemPrompt === systemPrompt.name );
 
     if (previousMatchingMemory && !this.overwrite) {
@@ -209,45 +212,9 @@ export class MemoryService {
         conversationId,
         messageCount: messages.length,
         createdFrom: memoryType,
-        createdBy: "MemoryService",
+        createdBy: "MemoryCreator",
         systemPrompt: systemPrompt.name,
       },
     };
   }
-
-  public async getMemoriesAsAssistantMessage() : Promise<ConversationMessage | null> {
-
-    const userProfileMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createUserProfileSystemPrompt.name,
-    });
-
-    const lastUserProfileMemory = userProfileMemory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-    const assistantPersonaMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createAssistantPersonaSystemPrompt.name,
-    });
-    const lastAssistantPersonaMemory = assistantPersonaMemory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-    
-    const memories = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createMemorySystemPrompt.name,
-    });
-
-    const memory = memories.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-    return {
-      role: "assistant",
-      content: `Latest memories: 
-      
-      ${memory ? `\nLatest conversation memory: ${memory.title}\n\n${memory.content}` : ""}
-      
-      ${lastUserProfileMemory ? `\nUser profile: ${lastUserProfileMemory.title}\n\n${lastUserProfileMemory.content}` : ""}
-
-      ${lastAssistantPersonaMemory ? `\nAssistant persona: ${lastAssistantPersonaMemory.title}\n\n${lastAssistantPersonaMemory.content}` : ""}
-      `,
-    };
-  }
-
-
-  
 }
-

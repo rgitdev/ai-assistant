@@ -1,7 +1,7 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
 import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
 import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
-import { MemoryService } from "@backend/services/memory/MemoryService";
+import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -32,12 +32,12 @@ console.log("=== Full Memory Integration Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
 
 // Create memories first
-const memoryService = new MemoryService();
+const memoryCreator = new MemoryCreator();
 console.log("Creating memories from conversation...");
 try {
-  await memoryService.createMemoryForConversation("integration-test-1", messages);
-  await memoryService.createMemoryForCollectingUserInformation("integration-test-1", messages);
-  await memoryService.createMemoryForCollectingAssistantPersona("integration-test-1", messages);
+  await memoryCreator.createMemoryForConversation("integration-test-1", messages);
+  await memoryCreator.createMemoryForCollectingUserInformation("integration-test-1", messages);
+  await memoryCreator.createMemoryForCollectingAssistantPersona("integration-test-1", messages);
   console.log("Memories created successfully!");
 } catch (error) {
   console.error("Error creating memories:", error);

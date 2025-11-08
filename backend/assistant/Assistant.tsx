@@ -4,7 +4,8 @@ import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
 import { AssistantService } from "@backend/services/assistant/AssistantService";
 import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilder";
-import { MemoryService } from "@backend/services/memory/MemoryService";
+import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
+import { MemoryProvider } from "@backend/services/memory/MemoryProvider";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
@@ -14,7 +15,8 @@ export class Assistant {
 
   assistantService: AssistantService;
   conversationService: ConversationService;
-  memoryService: MemoryService;
+  memoryCreator: MemoryCreator;
+  memoryProvider: MemoryProvider;
   memorySearchService: MemorySearchService;
 
   constructor() {
@@ -32,7 +34,8 @@ export class Assistant {
     this.conversationService = new ConversationService(conversationRepository);
 
     // Orchestration: Assistant manages memory-related services
-    this.memoryService = new MemoryService();
+    this.memoryCreator = new MemoryCreator();
+    this.memoryProvider = new MemoryProvider();
 
     const vectorStore = new VectorStore();
     const embeddingService = new OpenAIEmbeddingService();
@@ -142,9 +145,12 @@ export class Assistant {
     const foundMemories = await this.memorySearchService.searchMemories(latestUserMessage);
 
     // Add latest memory messages
-    const lastMemory = await this.memoryService.getMemoriesAsAssistantMessage();
-    if (lastMemory) {
-      memoryMessages.push(lastMemory);
+    const formattedMemories = await this.memoryProvider.getFormattedMemories();
+    if (formattedMemories && formattedMemories.trim().length > 0) {
+      memoryMessages.push({
+        role: "assistant",
+        content: formattedMemories
+      });
     }
 
     return memoryMessages;

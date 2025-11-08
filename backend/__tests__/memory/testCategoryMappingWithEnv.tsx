@@ -1,11 +1,11 @@
-import { MemoryService } from "@backend/services/memory/MemoryService";
+import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { ChatMessage } from "@backend/models/ChatMessage";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
 
 // Test category mapping directly
-const memoryService = new MemoryService();
+const memoryCreator = new MemoryCreator();
 
 console.log("=== Category Mapping Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
@@ -23,15 +23,15 @@ const testMessages: ChatMessage[] = [
 ];
 
 console.log("Creating user profile memory...");
-const userProfileMemory = await memoryService.createMemoryForCollectingUserInformation("test-mapping-env-1", testMessages);
+const userProfileMemory = await memoryCreator.createMemoryForCollectingUserInformation("test-mapping-env-1", testMessages);
 console.log("User profile memory category:", userProfileMemory.category);
 
 console.log("Creating assistant persona memory...");
-const assistantPersonaMemory = await memoryService.createMemoryForCollectingAssistantPersona("test-mapping-env-1", testMessages);
+const assistantPersonaMemory = await memoryCreator.createMemoryForCollectingAssistantPersona("test-mapping-env-1", testMessages);
 console.log("Assistant persona memory category:", assistantPersonaMemory.category);
 
 console.log("Creating conversation memory...");
-const conversationMemory = await memoryService.createMemoryForConversation("test-mapping-env-1", testMessages);
+const conversationMemory = await memoryCreator.createMemoryForConversation("test-mapping-env-1", testMessages);
 console.log("Conversation memory category:", conversationMemory.category);
 
 console.log("=== Category Mapping Test Complete ===");
