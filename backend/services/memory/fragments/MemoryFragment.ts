@@ -4,12 +4,6 @@
  */
 export interface MemoryFragment {
   /**
-   * Returns the fragment's identifier.
-   * @returns The fragment name
-   */
-  getFragmentName(): string;
-
-  /**
    * Returns the formatted memory content.
    * @returns A Promise resolving to string content or null if no memory exists
    */

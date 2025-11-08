@@ -11,10 +11,6 @@ const createMemorySystemPrompt = {
 export class LastConversationFragment implements MemoryFragment {
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
-  getFragmentName(): string {
-    return "LastConversationFragment";
-  }
-
   async getMemory(): Promise<string | null> {
     const memories = await this.memoryRepository.findMemoriesByMetadata({
       systemPrompt: createMemorySystemPrompt.name,

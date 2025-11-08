@@ -11,10 +11,6 @@ const createUserProfileSystemPrompt = {
 export class LastUserProfileFragment implements MemoryFragment {
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
-  getFragmentName(): string {
-    return "LastUserProfileFragment";
-  }
-
   async getMemory(): Promise<string | null> {
     const userProfileMemory = await this.memoryRepository.findMemoriesByMetadata({
       systemPrompt: createUserProfileSystemPrompt.name,

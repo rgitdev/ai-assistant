@@ -11,10 +11,6 @@ const createAssistantPersonaSystemPrompt = {
 export class LastAssistantPersonaFragment implements MemoryFragment {
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
-  getFragmentName(): string {
-    return "LastAssistantPersonaFragment";
-  }
-
   async getMemory(): Promise<string | null> {
     const assistantPersonaMemory = await this.memoryRepository.findMemoriesByMetadata({
       systemPrompt: createAssistantPersonaSystemPrompt.name,
