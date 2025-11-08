@@ -1,6 +1,6 @@
 import { MemoryFragment } from "./MemoryFragment";
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
-import { MemoryCategory, MEMORY_SYSTEM_PROMPT_NAMES } from "backend/models/Memory";
+import { MemoryCategory } from "backend/models/Memory";
 import { memorySystemPrompt } from "@backend/services/memory/prompts/memorySystemPrompt";
 
 /**
@@ -16,10 +16,7 @@ export class LastConversationFragment implements MemoryFragment {
   }
 
   async getMemory(): Promise<string | null> {
-    const systemPromptName = MEMORY_SYSTEM_PROMPT_NAMES[this.category]!;
-    const memories = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: systemPromptName,
-    });
+    const memories = await this.memoryRepository.findMemoriesByCategory(this.category);
 
     const memory = memories.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
