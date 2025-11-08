@@ -1,17 +1,9 @@
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
-
-const createMemorySystemPrompt = {
-  name: "createMemorySystemPrompt",
-}
-
-const createUserProfileSystemPrompt = {
-  name: "userProfileSystemPrompt",
-}
-
-const createAssistantPersonaSystemPrompt = {
-  name: "createAssistantPersonaSystemPrompt",
-}
+import { MemoryFormatter } from "./fragments/MemoryFormatter";
+import { LastConversationFragment } from "./fragments/LastConversationFragment";
+import { LastUserProfileFragment } from "./fragments/LastUserProfileFragment";
+import { LastAssistantPersonaFragment } from "./fragments/LastAssistantPersonaFragment";
 
 /**
  * Service responsible for retrieving and formatting memories.
@@ -35,30 +27,13 @@ export class MemoryProvider {
    * @returns Formatted string of memories, or empty string if no memories exist
    */
   public async getFormattedMemories(): Promise<string> {
-    const userProfileMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createUserProfileSystemPrompt.name,
-    });
+    const fragments = [
+      new LastConversationFragment(this.memoryRepository),
+      new LastUserProfileFragment(this.memoryRepository),
+      new LastAssistantPersonaFragment(this.memoryRepository),
+    ];
 
-    const lastUserProfileMemory = userProfileMemory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-    const assistantPersonaMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createAssistantPersonaSystemPrompt.name,
-    });
-    const lastAssistantPersonaMemory = assistantPersonaMemory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-    const memories = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createMemorySystemPrompt.name,
-    });
-
-    const memory = memories.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-    return `Latest memories:
-
-      ${memory ? `\nLatest conversation memory: ${memory.title}\n\n${memory.content}` : ""}
-
-      ${lastUserProfileMemory ? `\nUser profile: ${lastUserProfileMemory.title}\n\n${lastUserProfileMemory.content}` : ""}
-
-      ${lastAssistantPersonaMemory ? `\nAssistant persona: ${lastAssistantPersonaMemory.title}\n\n${lastAssistantPersonaMemory.content}` : ""}
-      `;
+    const formatter = new MemoryFormatter(fragments);
+    return formatter.format();
   }
 }
