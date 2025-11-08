@@ -39,7 +39,7 @@ const sampleMessages: ChatMessage[] = [
   }
 ];
 
-// Create some memories first - orchestrate manually
+// Create some memories first - use executor pattern
 console.log("Creating memories...");
 try {
   const commands = [
@@ -49,18 +49,11 @@ try {
   ];
 
   for (const command of commands) {
-    // Step 1: Prepare memory creation
-    const preparation = await memoryCreator.prepareMemoryCreation(command);
-
-    if (preparation) {
-      // Step 2: Call AssistantService to create memory via LLM
-      const memoryJson = await assistantService.createMemory(
-        preparation.systemPrompt,
-        preparation.messages
-      );
-
-      // Step 3: Store the memory
-      const memory = await memoryCreator.storeMemory(preparation, memoryJson);
+    const memory = await memoryCreator.createMemory(
+      command,
+      (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+    );
+    if (memory) {
       console.log("Created memory:", memory.title, "Category:", memory.category);
     }
   }

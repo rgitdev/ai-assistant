@@ -191,14 +191,11 @@ export class Assistant {
 
   /**
    * Create a memory for a conversation.
-   * Orchestrates the memory creation process by:
-   * 1. Preparing memory creation (checks duplicates)
-   * 2. Calling AssistantService to create memory content via LLM
-   * 3. Storing the memory
+   * Passes executor function to MemoryCreator for LLM interaction.
    *
    * @param conversationId - The conversation ID to create memory from
    * @param category - The category of memory to create
-   * @returns The created memory record, or existing record if duplicate
+   * @returns The created memory record, or null if already exists
    */
   async createMemoryForConversation(
     conversationId: string,
@@ -227,24 +224,15 @@ export class Assistant {
         throw new Error(`Unsupported memory category: ${category}`);
     }
 
-    // Step 1: Prepare memory creation (checks if already exists)
-    const preparation = await this.memoryCreator.prepareMemoryCreation(command);
-
-    if (!preparation) {
-      // Memory already exists
-      return null;
-    }
-
-    // Step 2: Call AssistantService to create memory via LLM
-    const memoryJson = await this.assistantService.createMemory(
-      preparation.systemPrompt,
-      preparation.messages
+    // Create memory with executor function (dependency injection)
+    const memory = await this.memoryCreator.createMemory(
+      command,
+      (systemPrompt, messages) => this.assistantService.createMemory(systemPrompt, messages)
     );
 
-    // Step 3: Store the memory
-    const memory = await this.memoryCreator.storeMemory(preparation, memoryJson);
-
-    console.log(`Created ${category} memory for conversation ${conversationId}: ${memory.id}`);
+    if (memory) {
+      console.log(`Created ${category} memory for conversation ${conversationId}: ${memory.id}`);
+    }
 
     return memory;
   }

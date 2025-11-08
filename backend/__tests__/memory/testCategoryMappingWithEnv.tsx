@@ -29,28 +29,31 @@ const testMessages: ChatMessage[] = [
 
 console.log("Creating user profile memory...");
 const userProfileCommand = CreateUserProfileMemoryCommand("test-mapping-env-1", testMessages);
-const userProfilePrep = await memoryCreator.prepareMemoryCreation(userProfileCommand);
-if (userProfilePrep) {
-  const userProfileJson = await assistantService.createMemory(userProfilePrep.systemPrompt, userProfilePrep.messages);
-  const userProfileMemory = await memoryCreator.storeMemory(userProfilePrep, userProfileJson);
+const userProfileMemory = await memoryCreator.createMemory(
+  userProfileCommand,
+  (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+);
+if (userProfileMemory) {
   console.log("User profile memory category:", userProfileMemory.category);
 }
 
 console.log("Creating assistant persona memory...");
 const assistantPersonaCommand = CreateAssistantPersonaMemoryCommand("test-mapping-env-1", testMessages);
-const assistantPersonaPrep = await memoryCreator.prepareMemoryCreation(assistantPersonaCommand);
-if (assistantPersonaPrep) {
-  const assistantPersonaJson = await assistantService.createMemory(assistantPersonaPrep.systemPrompt, assistantPersonaPrep.messages);
-  const assistantPersonaMemory = await memoryCreator.storeMemory(assistantPersonaPrep, assistantPersonaJson);
+const assistantPersonaMemory = await memoryCreator.createMemory(
+  assistantPersonaCommand,
+  (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+);
+if (assistantPersonaMemory) {
   console.log("Assistant persona memory category:", assistantPersonaMemory.category);
 }
 
 console.log("Creating conversation memory...");
 const conversationCommand = CreateConversationMemoryCommand("test-mapping-env-1", testMessages);
-const conversationPrep = await memoryCreator.prepareMemoryCreation(conversationCommand);
-if (conversationPrep) {
-  const conversationJson = await assistantService.createMemory(conversationPrep.systemPrompt, conversationPrep.messages);
-  const conversationMemory = await memoryCreator.storeMemory(conversationPrep, conversationJson);
+const conversationMemory = await memoryCreator.createMemory(
+  conversationCommand,
+  (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+);
+if (conversationMemory) {
   console.log("Conversation memory category:", conversationMemory.category);
 }
 
