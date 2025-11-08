@@ -1,6 +1,6 @@
 import { ConversationRepositoryFactory } from "@backend/repository/ConversationRepositoryFactory";
-import { MemoryService } from "@backend/services/memory/MemoryService";
+import { MemoryProvider } from "@backend/services/memory/MemoryProvider";
 
-const memoryService = new MemoryService();
+const memoryProvider = new MemoryProvider();
 
-memoryService.getMemoriesAsAssistantMessage().then(console.log);
+memoryProvider.getFormattedMemories().then(console.log);

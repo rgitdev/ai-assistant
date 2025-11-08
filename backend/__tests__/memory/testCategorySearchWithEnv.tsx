@@ -1,4 +1,4 @@
-import { MemoryService } from "@backend/services/memory/MemoryService";
+import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
 import { ChatMessage } from "@backend/models/ChatMessage";
 
@@ -6,7 +6,7 @@ import { ChatMessage } from "@backend/models/ChatMessage";
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
 
 // Test category-based search with fresh memories
-const memoryService = new MemoryService();
+const memoryCreator = new MemoryCreator();
 const memoryAnswerQueryService = new MemoryAnswerQueryService();
 
 console.log("=== Category Search Test with Test File ===");
@@ -37,13 +37,13 @@ const sampleMessages: ChatMessage[] = [
 // Create some memories first
 console.log("Creating memories...");
 try {
-  const memory1 = await memoryService.createMemoryForConversation("test-conversation-env-1", sampleMessages);
+  const memory1 = await memoryCreator.createMemoryForConversation("test-conversation-env-1", sampleMessages);
   console.log("Created memory 1:", memory1.title, "Category:", memory1.category);
-  
-  const memory2 = await memoryService.createMemoryForCollectingUserInformation("test-conversation-env-1", sampleMessages);
+
+  const memory2 = await memoryCreator.createMemoryForCollectingUserInformation("test-conversation-env-1", sampleMessages);
   console.log("Created memory 2:", memory2.title, "Category:", memory2.category);
-  
-  const memory3 = await memoryService.createMemoryForCollectingAssistantPersona("test-conversation-env-1", sampleMessages);
+
+  const memory3 = await memoryCreator.createMemoryForCollectingAssistantPersona("test-conversation-env-1", sampleMessages);
   console.log("Created memory 3:", memory3.title, "Category:", memory3.category);
 } catch (error) {
   console.error("Error creating memories:", error);

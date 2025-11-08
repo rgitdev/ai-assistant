@@ -1,5 +1,6 @@
 import { BaseJob } from '../BaseJob';
-import { MemoryService } from '../../services/memory/MemoryService';
+import { IMemoryRepository } from '../../repository/memory/IMemoryRepository';
+import { MemoryRepositoryFactory } from '../../repository/memory/MemoryRepositoryFactory';
 import { VectorStore } from '../../client/vector/VectorStore';
 import { OpenAIEmbeddingService } from '../../client/openai/OpenAIEmbeddingService';
 
@@ -8,13 +9,14 @@ export class MemoryIndexingJob extends BaseJob {
   readonly description = 'Update vector embeddings for new memories';
   readonly schedule = '*/15 * * * *'; // Every 15 minutes
 
-  private memoryService: MemoryService;
+  private memoryRepository: IMemoryRepository;
   private vectorStore: VectorStore;
   private embeddingService: OpenAIEmbeddingService;
 
   constructor() {
     super();
-    this.memoryService = new MemoryService();
+    const memoryRepoFactory = new MemoryRepositoryFactory();
+    this.memoryRepository = memoryRepoFactory.build();
     this.vectorStore = new VectorStore();
     this.embeddingService = new OpenAIEmbeddingService();
   }
@@ -22,10 +24,10 @@ export class MemoryIndexingJob extends BaseJob {
   async execute() {
     try {
       console.log('Starting memory indexing job...');
-      
+
       // Get memories that haven't been indexed yet
-      const memories = await this.memoryService.getAllMemories();
-      const unindexedMemories = memories.filter(memory => !memory.vectorId);
+      const memories = await this.memoryRepository.getAllMemories();
+      const unindexedMemories = memories.filter(memory => !memory.metadata?.vectorId);
       
       let indexedCount = 0;
       for (const memory of unindexedMemories) {
@@ -42,14 +44,16 @@ export class MemoryIndexingJob extends BaseJob {
               sourceId: memory.id,
               category: memory.category,
               importance: memory.importance,
-              timestamp: memory.timestamp
+              timestamp: memory.createdAt
             }
           });
 
           // Update memory with vector ID
-          await this.memoryService.updateMemory({
-            ...memory,
-            vectorId
+          await this.memoryRepository.updateMemory(memory.id, {
+            metadata: {
+              ...memory.metadata,
+              vectorId
+            }
           });
 
           indexedCount++;
