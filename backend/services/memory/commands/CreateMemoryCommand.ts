@@ -1,17 +1,14 @@
 import { ChatMessage } from "backend/models/ChatMessage";
-import { MemoryRecord } from "backend/models/Memory";
+import { MemoryCategory } from "backend/models/Memory";
 
 /**
- * Command interface for creating memory records.
- * Implements the Command Pattern to encapsulate memory creation operations.
+ * Base command data structure for creating memory records.
+ * Simple data record with no dependencies or logic.
+ * Contains all data needed to create a memory.
  */
 export interface CreateMemoryCommand {
-  /**
-   * Executes the command to create a memory record from a conversation.
-   *
-   * @param conversationId Unique conversation identifier
-   * @param messages Conversation messages in chronological order
-   * @returns Promise resolving to the created memory record
-   */
-  execute(conversationId: string, messages: ChatMessage[]): Promise<MemoryRecord>;
+  conversationId: string;
+  messages: ChatMessage[];
+  memoryCategory: MemoryCategory;
+  systemPrompt: string;
 }
