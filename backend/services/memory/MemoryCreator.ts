@@ -16,26 +16,6 @@ const CreatedMemoryResponseSchema = z.object({
 
 type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 
-type SystemPrompt = {
-  name: string;
-  prompt: string;
-}
-
-const createMemorySystemPrompt = {
-  name: "createMemorySystemPrompt",
-  prompt: memorySystemPrompt,
-}
-
-const createUserProfileSystemPrompt = {
-  name: "userProfileSystemPrompt",
-  prompt: userProfileSystemPrompt,
-}
-
-const createAssistantPersonaSystemPrompt = {
-  name: "createAssistantPersonaSystemPrompt",
-  prompt: assistantPersonaSystemPrompt,
-}
-
 /**
  * Service responsible for creating and storing memories from conversations.
  * Handles memory creation with OpenAI and persists to repository.
@@ -43,7 +23,6 @@ const createAssistantPersonaSystemPrompt = {
 export class MemoryCreator {
   private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
-
   private readonly overwrite: boolean = false;
 
   constructor() {
@@ -70,7 +49,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      createMemorySystemPrompt,
+      memorySystemPrompt,
       MemoryCategory.CONVERSATION);
   }
 
@@ -90,7 +69,7 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      createUserProfileSystemPrompt,
+      userProfileSystemPrompt,
       MemoryCategory.USER_PROFILE);
   }
 
@@ -111,14 +90,14 @@ export class MemoryCreator {
     return this.createMemoryForCategoryInternal(
       conversationId,
       messages,
-      createAssistantPersonaSystemPrompt,
+      assistantPersonaSystemPrompt,
       MemoryCategory.ASSISTANT_PERSONA);
   }
 
   private async createMemoryForCategoryInternal(
     conversationId: string,
     messages: ChatMessage[],
-    systemPrompt: SystemPrompt,
+    systemPrompt: string,
     category: MemoryCategory): Promise<MemoryRecord> {
 
     const createInput = await this.createMemoryInputFromConversation(
@@ -134,7 +113,7 @@ export class MemoryCreator {
       reference: conversationId,
     });
 
-    const previousMatchingMemory = prevRecords.find(r => r.metadata?.systemPrompt === systemPrompt.name );
+    const previousMatchingMemory = prevRecords.find(r => r.category === category);
 
     if (previousMatchingMemory && !this.overwrite) {
       return previousMatchingMemory;
@@ -157,7 +136,7 @@ export class MemoryCreator {
    *
    * @param conversationId Unique conversation identifier
    * @param messages Conversation messages in chronological order
-   * @param systemPrompt The system prompt to use for memory generation
+   * @param systemPrompt The system prompt text to use for memory generation
    * @param memoryType The type of memory being created
    * @param category The memory category
    * @returns MemoryCreateInput ready for repository creation
@@ -165,7 +144,7 @@ export class MemoryCreator {
   private async createMemoryInputFromConversation(
     conversationId: string,
     messages: ChatMessage[],
-    systemPrompt: SystemPrompt,
+    systemPrompt: string,
     memoryType: string,
     category: MemoryCategory
   ): Promise<MemoryCreateInput> {
@@ -183,7 +162,7 @@ export class MemoryCreator {
 
     // Ask OpenAI to produce a JSON memory object based on the conversation
     const responseRawJson = await this.openAIService.sendMessages(
-      systemPrompt.prompt,
+      systemPrompt,
       openAIMessages
     );
 
@@ -213,7 +192,6 @@ export class MemoryCreator {
         messageCount: messages.length,
         createdFrom: memoryType,
         createdBy: "MemoryCreator",
-        systemPrompt: systemPrompt.name,
       },
     };
   }

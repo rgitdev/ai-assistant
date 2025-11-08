@@ -1,20 +1,17 @@
 import { MemoryFragment } from "./MemoryFragment";
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
-
-const createAssistantPersonaSystemPrompt = {
-  name: "createAssistantPersonaSystemPrompt",
-};
+import { MemoryCategory } from "backend/models/Memory";
 
 /**
  * Fragment for retrieving the latest assistant persona memory.
  */
 export class LastAssistantPersonaFragment implements MemoryFragment {
+  readonly category = MemoryCategory.ASSISTANT_PERSONA;
+
   constructor(private readonly memoryRepository: IMemoryRepository) {}
 
   async getMemory(): Promise<string | null> {
-    const assistantPersonaMemory = await this.memoryRepository.findMemoriesByMetadata({
-      systemPrompt: createAssistantPersonaSystemPrompt.name,
-    });
+    const assistantPersonaMemory = await this.memoryRepository.findMemoriesByCategory(this.category);
 
     const lastAssistantPersonaMemory = assistantPersonaMemory.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
