@@ -35,17 +35,32 @@ const messages: ChatMessage[] = [
 console.log("=== Full Memory Integration Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
 
-// Create memories first
+// Create memories first - orchestrate manually since we're using hardcoded messages
 const assistantService = new AssistantService();
-const memoryCreator = new MemoryCreator(assistantService);
+const memoryCreator = new MemoryCreator();
 console.log("Creating memories from conversation...");
 try {
-  const command1 = CreateConversationMemoryCommand("integration-test-1", messages);
-  await memoryCreator.createMemory(command1);
-  const command2 = CreateUserProfileMemoryCommand("integration-test-1", messages);
-  await memoryCreator.createMemory(command2);
-  const command3 = CreateAssistantPersonaMemoryCommand("integration-test-1", messages);
-  await memoryCreator.createMemory(command3);
+  const commands = [
+    CreateConversationMemoryCommand("integration-test-1", messages),
+    CreateUserProfileMemoryCommand("integration-test-1", messages),
+    CreateAssistantPersonaMemoryCommand("integration-test-1", messages)
+  ];
+
+  for (const command of commands) {
+    // Step 1: Prepare memory creation
+    const preparation = await memoryCreator.prepareMemoryCreation(command);
+
+    if (preparation) {
+      // Step 2: Call AssistantService to create memory via LLM
+      const memoryJson = await assistantService.createMemory(
+        preparation.systemPrompt,
+        preparation.messages
+      );
+
+      // Step 3: Store the memory
+      await memoryCreator.storeMemory(preparation, memoryJson);
+    }
+  }
   console.log("Memories created successfully!");
 } catch (error) {
   console.error("Error creating memories:", error);

@@ -38,8 +38,7 @@ export class Assistant {
     this.conversationService = new ConversationService(conversationRepository);
 
     // Orchestration: Assistant manages memory-related services
-    // MemoryCreator now uses AssistantService for OpenAI interactions
-    this.memoryCreator = new MemoryCreator(assistantService);
+    this.memoryCreator = new MemoryCreator();
     this.memoryProvider = new MemoryProvider();
 
     const vectorStore = new VectorStore();
@@ -193,18 +192,18 @@ export class Assistant {
   /**
    * Create a memory for a conversation.
    * Orchestrates the memory creation process by:
-   * 1. Retrieving conversation messages
-   * 2. Creating appropriate command based on category
-   * 3. Delegating to MemoryCreator which uses AssistantService for OpenAI interaction
+   * 1. Preparing memory creation (checks duplicates)
+   * 2. Calling AssistantService to create memory content via LLM
+   * 3. Storing the memory
    *
    * @param conversationId - The conversation ID to create memory from
    * @param category - The category of memory to create
-   * @returns The created memory record
+   * @returns The created memory record, or existing record if duplicate
    */
   async createMemoryForConversation(
     conversationId: string,
     category: MemoryCategory
-  ): Promise<MemoryRecord> {
+  ): Promise<MemoryRecord | null> {
     // Get conversation messages
     const messages = await this.conversationService.getConversationMessages(conversationId);
 
@@ -228,8 +227,22 @@ export class Assistant {
         throw new Error(`Unsupported memory category: ${category}`);
     }
 
-    // Delegate to MemoryCreator (which uses AssistantService for OpenAI interaction)
-    const memory = await this.memoryCreator.createMemory(command);
+    // Step 1: Prepare memory creation (checks if already exists)
+    const preparation = await this.memoryCreator.prepareMemoryCreation(command);
+
+    if (!preparation) {
+      // Memory already exists
+      return null;
+    }
+
+    // Step 2: Call AssistantService to create memory via LLM
+    const memoryJson = await this.assistantService.createMemory(
+      preparation.systemPrompt,
+      preparation.messages
+    );
+
+    // Step 3: Store the memory
+    const memory = await this.memoryCreator.storeMemory(preparation, memoryJson);
 
     console.log(`Created ${category} memory for conversation ${conversationId}: ${memory.id}`);
 

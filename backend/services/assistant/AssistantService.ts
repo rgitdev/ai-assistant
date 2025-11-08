@@ -1,15 +1,6 @@
 import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { AssistantPromptBuilder } from "backend/assistant/AssistantPromptBuilder";
-import { ChatMessage } from "backend/models/ChatMessage";
-import { z } from "zod";
-
-const CreatedMemoryResponseSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  memory: z.string().min(1, "Memory content is required"),
-});
-
-export type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 
 /**
  * Service responsible for OpenAI communication.
@@ -48,35 +39,25 @@ export class AssistantService {
   }
 
   /**
-   * Create memory input from conversation messages using OpenAI.
-   * This method handles the LLM interaction for memory creation.
+   * Create memory from conversation messages using OpenAI.
+   * Returns JSON string with memory data.
    *
-   * @param systemPrompt The system prompt for memory creation (e.g., conversation summary, user profile, etc.)
-   * @param messages The conversation messages to create memory from
-   * @returns Object with title and memory content
+   * @param systemPrompt The system prompt for memory creation
+   * @param messages The conversation messages
+   * @returns JSON string with memory data
    */
-  async createMemoryInput(systemPrompt: string, messages: ChatMessage[]): Promise<CreatedMemoryResponse> {
+  async createMemory(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
     if (!messages || messages.length === 0) {
       throw new Error("messages are required to create a memory");
     }
 
-    // Convert ChatMessage to OpenAI ConversationMessage format
-    const openAIMessages: ConversationMessage[] = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-
     // Call OpenAI with JSON response format
-    const responseRawJson = await this.openAIService.sendMessages(
+    const responseJson = await this.openAIService.sendMessages(
       systemPrompt,
-      openAIMessages
+      messages
     );
 
-    // Parse and validate response
-    const responseJson = JSON.parse(responseRawJson);
-    const validatedResponse = CreatedMemoryResponseSchema.parse(responseJson);
-
-    return validatedResponse;
+    return responseJson;
   }
 
 }

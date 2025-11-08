@@ -3,13 +3,11 @@ import { Assistant } from '@backend/assistant/Assistant';
 import { IConversationRepository } from '@backend/repository/IConversationRepository';
 import { ConversationRepositoryFactory } from '@backend/repository/ConversationRepositoryFactory';
 import { MemoryCategory } from '@backend/models/Memory';
-import { IMemoryRepository } from '@backend/repository/memory/IMemoryRepository';
-import { MemoryRepositoryFactory } from '@backend/repository/memory/MemoryRepositoryFactory';
 
 /**
  * Background job that creates memories from conversations.
- * Orchestrates the memory creation process by using the Assistant class,
- * which delegates to MemoryCreator and AssistantService.
+ * Orchestrates the memory creation process by using the Assistant class.
+ * Assistant orchestrates between MemoryCreator and AssistantService.
  */
 export class AssistantMemoryJob extends BaseJob {
   readonly name = 'assistant-memory-creation';
@@ -18,13 +16,11 @@ export class AssistantMemoryJob extends BaseJob {
 
   private assistant: Assistant;
   private conversationRepository: IConversationRepository;
-  private memoryRepository: IMemoryRepository;
 
   constructor() {
     super();
     this.assistant = new Assistant();
     this.conversationRepository = new ConversationRepositoryFactory().build();
-    this.memoryRepository = new MemoryRepositoryFactory().build();
   }
 
   async execute() {
@@ -55,27 +51,18 @@ export class AssistantMemoryJob extends BaseJob {
           // Create memories for each category
           for (const category of memoryCategories) {
             try {
-              // Check if memory already exists for this conversation and category
-              const existingMemories = await this.memoryRepository.findMemoryBySource({
-                type: 'chat',
-                reference: conversation.id
-              });
-
-              const categoryMemoryExists = existingMemories.some(m => m.category === category);
-
-              if (categoryMemoryExists) {
-                console.log(`Memory already exists for conversation ${conversation.id}, category ${category}, skipping...`);
-                continue;
-              }
-
-              // Create memory using Assistant orchestration
+              // Create memory using Assistant orchestration (handles duplicate check internally)
               const memory = await this.assistant.createMemoryForConversation(
                 conversation.id,
                 category
               );
 
-              createdMemoriesCount++;
-              console.log(`Created ${category} memory: ${memory.id}`);
+              if (memory) {
+                createdMemoriesCount++;
+                console.log(`Created ${category} memory: ${memory.id}`);
+              } else {
+                console.log(`Memory already exists for conversation ${conversation.id}, category ${category}`);
+              }
             } catch (error) {
               console.error(`Failed to create ${category} memory for conversation ${conversation.id}:`, error);
             }
