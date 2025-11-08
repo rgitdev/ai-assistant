@@ -1,5 +1,6 @@
 import { SchedulerService } from './SchedulerService';
 import { ConversationIndexingJob } from '../../jobs/memory/ConversationIndexingJob';
+import { AssistantMemoryJob } from '../../jobs/assistant/AssistantMemoryJob';
 
 export class SchedulerInitializer {
   private schedulerService: SchedulerService;
@@ -13,6 +14,7 @@ export class SchedulerInitializer {
 
     // Register all default jobs
     this.schedulerService.registerJob(new ConversationIndexingJob());
+    // this.schedulerService.registerJob(new AssistantMemoryJob()); // Disabled for now
 
     // Start the scheduler
     await this.schedulerService.start();

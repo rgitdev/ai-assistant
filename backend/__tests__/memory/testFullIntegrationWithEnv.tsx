@@ -5,6 +5,7 @@ import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -34,16 +35,23 @@ const messages: ChatMessage[] = [
 console.log("=== Full Memory Integration Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
 
-// Create memories first
+// Create memories first - use executor pattern
+const assistantService = new AssistantService();
 const memoryCreator = new MemoryCreator();
 console.log("Creating memories from conversation...");
 try {
-  const command1 = CreateConversationMemoryCommand("integration-test-1", messages);
-  await memoryCreator.createMemory(command1);
-  const command2 = CreateUserProfileMemoryCommand("integration-test-1", messages);
-  await memoryCreator.createMemory(command2);
-  const command3 = CreateAssistantPersonaMemoryCommand("integration-test-1", messages);
-  await memoryCreator.createMemory(command3);
+  const commands = [
+    CreateConversationMemoryCommand("integration-test-1", messages),
+    CreateUserProfileMemoryCommand("integration-test-1", messages),
+    CreateAssistantPersonaMemoryCommand("integration-test-1", messages)
+  ];
+
+  for (const command of commands) {
+    await memoryCreator.createMemory(
+      command,
+      (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+    );
+  }
   console.log("Memories created successfully!");
 } catch (error) {
   console.error("Error creating memories:", error);

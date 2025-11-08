@@ -3,11 +3,13 @@ import { ChatMessage } from "@backend/models/ChatMessage";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
 
 // Test category mapping directly
+const assistantService = new AssistantService();
 const memoryCreator = new MemoryCreator();
 
 console.log("=== Category Mapping Test with Test File ===");
@@ -27,17 +29,32 @@ const testMessages: ChatMessage[] = [
 
 console.log("Creating user profile memory...");
 const userProfileCommand = CreateUserProfileMemoryCommand("test-mapping-env-1", testMessages);
-const userProfileMemory = await memoryCreator.createMemory(userProfileCommand);
-console.log("User profile memory category:", userProfileMemory.category);
+const userProfileMemory = await memoryCreator.createMemory(
+  userProfileCommand,
+  (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+);
+if (userProfileMemory) {
+  console.log("User profile memory category:", userProfileMemory.category);
+}
 
 console.log("Creating assistant persona memory...");
 const assistantPersonaCommand = CreateAssistantPersonaMemoryCommand("test-mapping-env-1", testMessages);
-const assistantPersonaMemory = await memoryCreator.createMemory(assistantPersonaCommand);
-console.log("Assistant persona memory category:", assistantPersonaMemory.category);
+const assistantPersonaMemory = await memoryCreator.createMemory(
+  assistantPersonaCommand,
+  (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+);
+if (assistantPersonaMemory) {
+  console.log("Assistant persona memory category:", assistantPersonaMemory.category);
+}
 
 console.log("Creating conversation memory...");
 const conversationCommand = CreateConversationMemoryCommand("test-mapping-env-1", testMessages);
-const conversationMemory = await memoryCreator.createMemory(conversationCommand);
-console.log("Conversation memory category:", conversationMemory.category);
+const conversationMemory = await memoryCreator.createMemory(
+  conversationCommand,
+  (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+);
+if (conversationMemory) {
+  console.log("Conversation memory category:", conversationMemory.category);
+}
 
 console.log("=== Category Mapping Test Complete ===");

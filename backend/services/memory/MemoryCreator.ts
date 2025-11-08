@@ -1,9 +1,8 @@
-import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAIService";
-import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
 import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
-import { MemoryRecord, MemoryCategory } from "backend/models/Memory";
+import { MemoryRecord } from "backend/models/Memory";
 import { CreateMemoryCommand } from "./commands/CreateMemoryCommand";
+import { ConversationMessage } from "backend/client/openai/OpenAIService";
 import { z } from "zod";
 
 const CreatedMemoryResponseSchema = z.object({
@@ -14,19 +13,24 @@ const CreatedMemoryResponseSchema = z.object({
 type CreatedMemoryResponse = z.infer<typeof CreatedMemoryResponseSchema>;
 
 /**
+ * Executor function type for LLM memory creation.
+ * Takes system prompt and messages, returns JSON string with memory data.
+ */
+export type MemoryExecutor = (
+  systemPrompt: string,
+  messages: ConversationMessage[]
+) => Promise<string>;
+
+/**
  * Service responsible for creating and storing memories from conversations.
- * Contains all business logic for memory creation.
- * Commands are simple data structures with configuration baked in.
+ * Uses dependency injection via executor function to call LLM.
+ * No direct dependencies on AssistantService - keeps it clean and testable.
  */
 export class MemoryCreator {
-  private readonly openAIService: OpenAIService;
   private readonly memoryRepository: IMemoryRepository;
   private readonly overwrite: boolean;
 
   constructor() {
-    const openAIFactory = new OpenAIServiceFactory();
-    this.openAIService = openAIFactory.build();
-
     const memoryRepoFactory = new MemoryRepositoryFactory();
     this.memoryRepository = memoryRepoFactory.build();
 
@@ -34,22 +38,27 @@ export class MemoryCreator {
   }
 
   /**
-   * Creates a memory record from a command.
-   * Checks for duplicates and persists the memory.
+   * Creates a memory record from a command using provided executor function.
+   * Checks for duplicates, calls executor to generate memory, and persists it.
    *
    * @param command Command containing conversationId, messages, category, and systemPrompt
-   * @returns The persisted memory record
+   * @param executor Function that calls LLM to create memory (injected dependency)
+   * @returns The created memory record, or null if already exists
    */
-  public async createMemory(command: CreateMemoryCommand): Promise<MemoryRecord> {
+  public async createMemory(
+    command: CreateMemoryCommand,
+    executor: MemoryExecutor
+  ): Promise<MemoryRecord | null> {
     const { conversationId, messages, memoryCategory, systemPrompt } = command;
 
-    const createInput = await this.createMemoryInput(
-      conversationId,
-      messages,
-      memoryCategory,
-      systemPrompt
-    );
+    if (!conversationId || conversationId.trim().length === 0) {
+      throw new Error("conversationId is required");
+    }
+    if (!messages || messages.length === 0) {
+      throw new Error("messages are required to create a memory");
+    }
 
+    // Check for existing memories
     const prevRecords = await this.memoryRepository.findMemoryBySource({
       type: "chat",
       reference: conversationId,
@@ -58,62 +67,35 @@ export class MemoryCreator {
     const previousMatchingMemory = prevRecords.find(r => r.category === memoryCategory);
 
     if (previousMatchingMemory && !this.overwrite) {
-      return previousMatchingMemory;
+      console.log(`Memory already exists for conversation ${conversationId}, category ${memoryCategory}`);
+      return null;
     }
 
-    console.log("Checking previous memories for conversation: ", conversationId, prevRecords.map(r => r.id));
-    const record = await this.memoryRepository.createMemory(createInput);
-    console.log("Created memory: ", record.id);
-
-    if (previousMatchingMemory) {
-      console.log("Deleting previous memories", previousMatchingMemory.id);
-      // await Promise.all(prevRecords.map(r => this.memoryRepository.deleteMemory(r.id)));
-    }
-
-    return record;
-  }
-
-  /**
-   * Creates the memory input by calling OpenAI and formatting the response.
-   */
-  private async createMemoryInput(
-    conversationId: string,
-    messages: any[],
-    category: MemoryCategory,
-    systemPrompt: string
-  ): Promise<MemoryCreateInput> {
-    if (!conversationId || conversationId.trim().length === 0) {
-      throw new Error("conversationId is required");
-    }
-    if (!messages || messages.length === 0) {
-      throw new Error("messages are required to create a memory");
-    }
-
+    // Convert ChatMessage to OpenAI ConversationMessage format
     const openAIMessages: ConversationMessage[] = messages.map((m) => ({
       role: m.role,
       content: m.content,
     }));
 
-    const responseRawJson = await this.openAIService.sendMessages(
-      systemPrompt,
-      openAIMessages
-    );
+    // Call executor (injected LLM function) to generate memory
+    const memoryJson = await executor(systemPrompt, openAIMessages);
 
-    const responseJson = JSON.parse(responseRawJson) as CreatedMemoryResponse;
+    // Parse and validate JSON response
+    const responseJson = JSON.parse(memoryJson);
+    const memoryResponse = CreatedMemoryResponseSchema.parse(responseJson);
 
-    const title = responseJson.title;
-    const content = responseJson.memory;
+    const title = memoryResponse.title;
+    const content = memoryResponse.memory;
     const importance = 3;
 
-    // Derive the creator name from the category
     const createdBy = `MemoryCreator.createMemory`;
 
-    return {
+    const createInput: MemoryCreateInput = {
       title,
       content,
       tags: [],
       importance,
-      category,
+      category: memoryCategory,
       sources: [
         {
           type: "chat",
@@ -130,5 +112,11 @@ export class MemoryCreator {
         createdBy,
       },
     };
+
+    console.log("Creating memory for conversation:", conversationId);
+    const record = await this.memoryRepository.createMemory(createInput);
+    console.log("Created memory:", record.id);
+
+    return record;
   }
 }

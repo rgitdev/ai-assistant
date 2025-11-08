@@ -37,7 +37,29 @@ export class AssistantService {
     const response = await this.openAIService.sendChatMessages(systemPrompt, messages);
     return response;
   }
-  
+
+  /**
+   * Create memory from conversation messages using OpenAI.
+   * Returns JSON string with memory data.
+   *
+   * @param systemPrompt The system prompt for memory creation
+   * @param messages The conversation messages
+   * @returns JSON string with memory data
+   */
+  async createMemory(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
+    if (!messages || messages.length === 0) {
+      throw new Error("messages are required to create a memory");
+    }
+
+    // Call OpenAI with JSON response format
+    const responseJson = await this.openAIService.sendMessages(
+      systemPrompt,
+      messages
+    );
+
+    return responseJson;
+  }
+
 }
 
 if (require.main === module) {

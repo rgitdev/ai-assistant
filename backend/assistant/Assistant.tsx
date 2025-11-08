@@ -10,6 +10,10 @@ import { MemorySearchService } from "@backend/services/memory/MemorySearchServic
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 import { ConversationService } from "@backend/services/conversation/ConversationService";
+import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
+import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
+import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
+import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 
 export class Assistant {
 
@@ -183,6 +187,54 @@ export class Assistant {
     const response = await this.generateAndAddResponse(conversationId);
 
     return { response, conversationId };
+  }
+
+  /**
+   * Create a memory for a conversation.
+   * Passes executor function to MemoryCreator for LLM interaction.
+   *
+   * @param conversationId - The conversation ID to create memory from
+   * @param category - The category of memory to create
+   * @returns The created memory record, or null if already exists
+   */
+  async createMemoryForConversation(
+    conversationId: string,
+    category: MemoryCategory
+  ): Promise<MemoryRecord | null> {
+    // Get conversation messages
+    const messages = await this.conversationService.getConversationMessages(conversationId);
+
+    if (!messages || messages.length === 0) {
+      throw new Error(`No messages found for conversation ${conversationId}`);
+    }
+
+    // Create appropriate command based on category
+    let command;
+    switch (category) {
+      case MemoryCategory.CONVERSATION:
+        command = CreateConversationMemoryCommand(conversationId, messages);
+        break;
+      case MemoryCategory.USER_PROFILE:
+        command = CreateUserProfileMemoryCommand(conversationId, messages);
+        break;
+      case MemoryCategory.ASSISTANT_PERSONA:
+        command = CreateAssistantPersonaMemoryCommand(conversationId, messages);
+        break;
+      default:
+        throw new Error(`Unsupported memory category: ${category}`);
+    }
+
+    // Create memory with executor function (dependency injection)
+    const memory = await this.memoryCreator.createMemory(
+      command,
+      (systemPrompt, messages) => this.assistantService.createMemory(systemPrompt, messages)
+    );
+
+    if (memory) {
+      console.log(`Created ${category} memory for conversation ${conversationId}: ${memory.id}`);
+    }
+
+    return memory;
   }
 }
 

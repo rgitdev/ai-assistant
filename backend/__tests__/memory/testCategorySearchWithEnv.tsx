@@ -4,11 +4,13 @@ import { ChatMessage } from "@backend/models/ChatMessage";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
 
 // Test category-based search with fresh memories
+const assistantService = new AssistantService();
 const memoryCreator = new MemoryCreator();
 const memoryAnswerQueryService = new MemoryAnswerQueryService();
 
@@ -24,7 +26,7 @@ const sampleMessages: ChatMessage[] = [
     "timestamp": "2025-01-01T10:00:00.000Z"
   },
   {
-    "id": "test-2", 
+    "id": "test-2",
     "content": "That's wonderful! Italian is a beautiful language. What specific areas of conversation are you most interested in?",
     "role": "assistant",
     "timestamp": "2025-01-01T10:01:00.000Z"
@@ -32,25 +34,29 @@ const sampleMessages: ChatMessage[] = [
   {
     "id": "test-3",
     "content": "I want to be able to order food, ask for directions, and have basic conversations about my interests like art and music.",
-    "role": "user", 
+    "role": "user",
     "timestamp": "2025-01-01T10:02:00.000Z"
   }
 ];
 
-// Create some memories first
+// Create some memories first - use executor pattern
 console.log("Creating memories...");
 try {
-  const command1 = CreateConversationMemoryCommand("test-conversation-env-1", sampleMessages);
-  const memory1 = await memoryCreator.createMemory(command1);
-  console.log("Created memory 1:", memory1.title, "Category:", memory1.category);
+  const commands = [
+    CreateConversationMemoryCommand("test-conversation-env-1", sampleMessages),
+    CreateUserProfileMemoryCommand("test-conversation-env-1", sampleMessages),
+    CreateAssistantPersonaMemoryCommand("test-conversation-env-1", sampleMessages)
+  ];
 
-  const command2 = CreateUserProfileMemoryCommand("test-conversation-env-1", sampleMessages);
-  const memory2 = await memoryCreator.createMemory(command2);
-  console.log("Created memory 2:", memory2.title, "Category:", memory2.category);
-
-  const command3 = CreateAssistantPersonaMemoryCommand("test-conversation-env-1", sampleMessages);
-  const memory3 = await memoryCreator.createMemory(command3);
-  console.log("Created memory 3:", memory3.title, "Category:", memory3.category);
+  for (const command of commands) {
+    const memory = await memoryCreator.createMemory(
+      command,
+      (systemPrompt, messages) => assistantService.createMemory(systemPrompt, messages)
+    );
+    if (memory) {
+      console.log("Created memory:", memory.title, "Category:", memory.category);
+    }
+  }
 } catch (error) {
   console.error("Error creating memories:", error);
 }
