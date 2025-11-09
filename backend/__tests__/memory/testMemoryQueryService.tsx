@@ -1,7 +1,6 @@
 
 import { ChatMessage } from "@backend/models/ChatMessage";
 import { QueryService } from "@backend/services/query/QueryService";
-import { MEMORY_CATEGORY_DESCRIPTIONS } from "@backend/models/Memory";
 
 
 const messages: ChatMessage[] = [
@@ -28,10 +27,6 @@ const messages: ChatMessage[] = [
 // Updated to use new QueryService - generates all query types by default
 const queryService = new QueryService();
 
-const queries = await queryService.extractQueries(
-  messages,
-  undefined,  // Use default: all query types
-  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
-);
+const queries = await queryService.extractQueries(messages);
 console.log("Extracted queries:");
 console.log(queries);

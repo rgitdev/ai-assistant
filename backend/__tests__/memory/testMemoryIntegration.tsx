@@ -1,7 +1,6 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
 import { QueryService } from "@backend/services/query/QueryService";
 import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
-import { MEMORY_CATEGORY_DESCRIPTIONS } from "@backend/models/Memory";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
@@ -32,11 +31,7 @@ console.log("=== Memory Integration Test ===");
 // Step 1: Generate all query types using QueryService
 const queryService = new QueryService();
 
-const queries = await queryService.extractQueries(
-  messages,
-  undefined,  // Use default: all query types
-  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
-);
+const queries = await queryService.extractQueries(messages);
 console.log("Generated queries:");
 console.log(queries);
 
@@ -47,19 +42,15 @@ const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingServic
 
 const queryResults = await memoryQueryResolver.resolveQueries(queries);
 console.log("\nFound memories:");
-console.log(queryResults.map(r => {
-  const category = r.query.metadata?.category || 'no category';
-  return {
-    query: `${r.query.type}|${category}: ${r.query.text}`,
-    memory: { id: r.memory.id, title: r.memory.title, category: r.memory.category }
-  };
-}));
+console.log(queryResults.map(r => ({
+  query: `${r.query.type}: ${r.query.text}`,
+  memory: { id: r.memory.id, title: r.memory.title, category: r.memory.category }
+})));
 
 // Step 3: Show detailed results for debugging
 console.log("\nDetailed query results:");
 queryResults.forEach((result, index) => {
-  const category = result.query.metadata?.category || 'no category';
-  console.log(`${index + 1}. Query: "${result.query.type}|${category}: ${result.query.text}"`);
+  console.log(`${index + 1}. Query: "${result.query.type}: ${result.query.text}"`);
   console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });

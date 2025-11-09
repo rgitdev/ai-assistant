@@ -6,7 +6,6 @@ import { CreateConversationMemoryCommand } from "@backend/services/memory/comman
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 import { AssistantService } from "@backend/services/assistant/AssistantService";
-import { MEMORY_CATEGORY_DESCRIPTIONS } from "@backend/models/Memory";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
@@ -63,11 +62,7 @@ try {
 // Step 1: Generate all query types using QueryService
 const queryService = new QueryService();
 
-const queries = await queryService.extractQueries(
-  messages,
-  undefined,  // Use default: all query types
-  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
-);
+const queries = await queryService.extractQueries(messages);
 console.log("\nGenerated queries:");
 console.log(queries);
 
@@ -80,8 +75,7 @@ const queryResults = await memoryQueryResolver.resolveQueries(queries);
 // Step 3: Show detailed results for debugging
 console.log("\nDetailed query results:");
 queryResults.forEach((result, index) => {
-  const category = result.query.metadata?.category || 'no category';
-  console.log(`${index + 1}. Query: "${result.query.type}|${category}: ${result.query.text}"`);
+  console.log(`${index + 1}. Query: "${result.query.type}: ${result.query.text}"`);
   console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });

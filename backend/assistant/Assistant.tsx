@@ -166,11 +166,7 @@ export class Assistant {
     }];
 
     // Generate all query types (memory, websearch, calendar, etc.)
-    const queries = await this.queryService.extractQueries(
-      recentMessages,
-      undefined,  // Use default: all query types
-      MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
-    );
+    const queries = await this.queryService.extractQueries(recentMessages);
 
     // Step 2: Resolve memory queries (MemoryQueryResolver filters to type="memory")
     const queryResults = await this.memoryQueryResolver.resolveQueries(queries);

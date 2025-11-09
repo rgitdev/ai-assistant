@@ -66,11 +66,11 @@ try {
   console.error("Error creating memories:", error);
 }
 
-// Test category-based search - using new Query interface with type and metadata
+// Test search using simplified Query interface (no category metadata)
 const testQueries: Query[] = [
-  { type: "memory", text: "Italian learning goals and interests", metadata: { category: "conversation" } },
-  { type: "memory", text: "user preferences for Italian conversation topics", metadata: { category: "user_profile" } },
-  { type: "memory", text: "assistant communication style", metadata: { category: "other" } }
+  { type: "memory", text: "Italian learning goals and interests" },
+  { type: "memory", text: "user preferences for Italian conversation topics" },
+  { type: "memory", text: "assistant communication style" }
 ];
 
 console.log("\nTesting category-based search with queries:");

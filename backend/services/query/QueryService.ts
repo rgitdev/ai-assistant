@@ -36,13 +36,11 @@ export class QueryService {
    *
    * @param messages - Conversation messages to analyze
    * @param queryTypes - Available query types (defaults to all types)
-   * @param categoryHints - Optional category hints for metadata (e.g., memory categories)
    * @returns Array of queries with type and routing metadata
    */
   async extractQueries(
     messages: ChatMessage[],
-    queryTypes: QueryType[] = ["memory", "websearch", "calendar", "other"],
-    categoryHints?: Record<string, string>
+    queryTypes: QueryType[] = ["memory", "websearch", "calendar", "other"]
   ): Promise<Query[]> {
     try {
       const openAIMessages: ConversationMessage[] = messages.map((m) => ({
@@ -50,7 +48,7 @@ export class QueryService {
         content: m.content,
       }));
 
-      const systemPrompt = queryExtractionSystemPrompt(queryTypes, categoryHints);
+      const systemPrompt = queryExtractionSystemPrompt(queryTypes);
       const thinking = await this.openAIService.sendMessages(systemPrompt, openAIMessages);
       const result = JSON.parse(thinking) as { queries: string[] };
 
@@ -62,8 +60,8 @@ export class QueryService {
   }
 
   /**
-   * Parse a query string in format "type|category: query text" into a Query object.
-   * Format: "memory|user_profile: user's programming preferences"
+   * Parse a query string in format "type: query text" into a Query object.
+   * Format: "memory: user's programming preferences"
    */
   private parseQueryString(queryString: string): Query {
     const colonIndex = queryString.indexOf(':');
@@ -71,27 +69,12 @@ export class QueryService {
       return { type: "other", text: queryString.trim() };
     }
 
-    const typeAndCategory = queryString.substring(0, colonIndex).trim();
+    const type = queryString.substring(0, colonIndex).trim() as QueryType;
     const text = queryString.substring(colonIndex + 1).trim();
-
-    // Parse "type|category" format
-    const pipeIndex = typeAndCategory.indexOf('|');
-    if (pipeIndex === -1) {
-      // No category, just type
-      return {
-        type: typeAndCategory as QueryType,
-        text
-      };
-    }
-
-    // Has both type and category
-    const type = typeAndCategory.substring(0, pipeIndex).trim() as QueryType;
-    const category = typeAndCategory.substring(pipeIndex + 1).trim();
 
     return {
       type,
-      text,
-      metadata: { category }
+      text
     };
   }
 }

@@ -1,4 +1,4 @@
-import { MemoryRecord, MemoryCategory, parseMemoryCategory } from "@backend/models/Memory";
+import { MemoryRecord } from "@backend/models/Memory";
 import { Query } from "@backend/services/query/QueryService";
 import { MemorySearchService, MemorySearchOptions } from "./MemorySearchService";
 import { VectorStore } from "@backend/client/vector/VectorStore";
@@ -63,33 +63,20 @@ export class MemoryQueryResolver {
 
   /**
    * Resolves a single memory query to the best matching memory.
+   * Searches across all memories without category filtering.
    *
-   * @param query - Query object with type="memory" and optional category in metadata
+   * @param query - Query object with type="memory"
    * @returns The best matching MemoryRecord or undefined if none found
    */
   private async resolveSingleQuery(query: Query): Promise<MemoryRecord | undefined> {
-    // Extract category from metadata if available
-    const category = query.metadata?.category;
-
-    // Search for memories using category-based search if category provided
     const searchOptions: MemorySearchOptions = {
       topK: 1, // Get only the best match
-      minScore: 0.3, // Lower threshold for category-based search
+      minScore: 0.3, // Threshold for relevance
     };
 
-    if (category) {
-      const memoryCategory = parseMemoryCategory(category);
-      const memories = await this.memorySearchService.searchMemoriesByCategory(
-        memoryCategory,
-        query.text,
-        searchOptions
-      );
-      return memories.length > 0 ? memories[0] : undefined;
-    } else {
-      // No category specified, search all memories
-      const memories = await this.memorySearchService.searchMemories(query.text, searchOptions);
-      return memories.length > 0 ? memories[0] : undefined;
-    }
+    // Search across all memories
+    const memories = await this.memorySearchService.searchMemories(query.text, searchOptions);
+    return memories.length > 0 ? memories[0] : undefined;
   }
 
   /**
