@@ -10,7 +10,7 @@ import { MemorySearchService } from "@backend/services/memory/MemorySearchServic
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 import { ConversationService } from "@backend/services/conversation/ConversationService";
-import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
+import { MemoryCategory, MemoryRecord, MEMORY_CATEGORY_DESCRIPTIONS } from "@backend/models/Memory";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
@@ -165,8 +165,7 @@ export class Assistant {
       timestamp: new Date().toISOString()
     }];
 
-    const categoryDescriptions = this.getCategoryDescriptions();
-    const queries = await this.queryService.extractQueries(recentMessages, categoryDescriptions);
+    const queries = await this.queryService.extractQueries(recentMessages, MEMORY_CATEGORY_DESCRIPTIONS);
 
     // Step 2: Resolve queries to memories
     const queryResults = await this.memoryQueryResolver.resolveQueries(queries);
@@ -192,25 +191,6 @@ export class Assistant {
     }
 
     return memoryMessages;
-  }
-
-  /**
-   * Get memory category descriptions for query generation.
-   * Kept here as it bridges domain knowledge to the query service.
-   */
-  private getCategoryDescriptions(): Record<string, string> {
-    return {
-      [MemoryCategory.ASSISTANT_PERSONA]: 'Personal information, characteristics, preferences, and biographical details about the assistant',
-      [MemoryCategory.USER_PROFILE]: 'Personal information, characteristics, preferences, and biographical details about the user',
-      [MemoryCategory.CONVERSATION]: 'Past discussions, dialogue history, and conversational context between user and assistant',
-      [MemoryCategory.TASK]: 'Work items, projects, assignments, and task-related information including progress and outcomes',
-      [MemoryCategory.PREFERENCE]: 'User choices, settings, likes/dislikes, and behavioral preferences across different contexts',
-      [MemoryCategory.CONTEXT]: 'Environmental information, situational details, and contextual background for interactions',
-      [MemoryCategory.KNOWLEDGE]: 'Facts, learned information, domain expertise, and educational content shared or discussed',
-      [MemoryCategory.RELATIONSHIP]: 'Connections between people, entities, or concepts; interpersonal dynamics and associations',
-      [MemoryCategory.GOAL]: 'Objectives, targets, aspirations, and desired outcomes expressed by the user',
-      [MemoryCategory.OTHER]: 'Miscellaneous information that doesn\'t fit into other specific categories'
-    };
   }
 
   /**

@@ -1,7 +1,7 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
 import { QueryService } from "@backend/services/query/QueryService";
 import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
-import { MemoryCategory } from "@backend/models/Memory";
+import { MEMORY_CATEGORY_DESCRIPTIONS } from "@backend/models/Memory";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
@@ -31,20 +31,8 @@ console.log("=== Memory Integration Test ===");
 
 // Step 1: Generate queries using QueryService
 const queryService = new QueryService();
-const categoryDescriptions = {
-  [MemoryCategory.ASSISTANT_PERSONA]: 'Personal information, characteristics, preferences, and biographical details about the assistant',
-  [MemoryCategory.USER_PROFILE]: 'Personal information, characteristics, preferences, and biographical details about the user',
-  [MemoryCategory.CONVERSATION]: 'Past discussions, dialogue history, and conversational context between user and assistant',
-  [MemoryCategory.TASK]: 'Work items, projects, assignments, and task-related information including progress and outcomes',
-  [MemoryCategory.PREFERENCE]: 'User choices, settings, likes/dislikes, and behavioral preferences across different contexts',
-  [MemoryCategory.CONTEXT]: 'Environmental information, situational details, and contextual background for interactions',
-  [MemoryCategory.KNOWLEDGE]: 'Facts, learned information, domain expertise, and educational content shared or discussed',
-  [MemoryCategory.RELATIONSHIP]: 'Connections between people, entities, or concepts; interpersonal dynamics and associations',
-  [MemoryCategory.GOAL]: 'Objectives, targets, aspirations, and desired outcomes expressed by the user',
-  [MemoryCategory.OTHER]: 'Miscellaneous information that doesn\'t fit into other specific categories'
-};
 
-const queries = await queryService.extractQueries(messages, categoryDescriptions);
+const queries = await queryService.extractQueries(messages, MEMORY_CATEGORY_DESCRIPTIONS);
 console.log("Generated queries:");
 console.log(queries);
 
