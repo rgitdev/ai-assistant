@@ -29,18 +29,18 @@ const messages: ChatMessage[] = [
 
 console.log("=== Memory Integration Test ===");
 
-// Step 1: Generate queries using QueryService
+// Step 1: Generate all query types using QueryService
 const queryService = new QueryService();
 
 const queries = await queryService.extractQueries(
   messages,
-  ["memory"],  // Only generate memory queries
-  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for routing
+  undefined,  // Use default: all query types
+  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
 );
 console.log("Generated queries:");
 console.log(queries);
 
-// Step 2: Resolve queries to memories using MemoryQueryResolver
+// Step 2: Resolve memory queries using MemoryQueryResolver (filters to type="memory")
 const vectorStore = new VectorStore();
 const embeddingService = new OpenAIEmbeddingService();
 const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);

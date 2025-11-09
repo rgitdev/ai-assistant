@@ -165,13 +165,14 @@ export class Assistant {
       timestamp: new Date().toISOString()
     }];
 
+    // Generate all query types (memory, websearch, calendar, etc.)
     const queries = await this.queryService.extractQueries(
       recentMessages,
-      ["memory"],  // Only generate memory queries for now
-      MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for routing metadata
+      undefined,  // Use default: all query types
+      MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
     );
 
-    // Step 2: Resolve queries to memories
+    // Step 2: Resolve memory queries (MemoryQueryResolver filters to type="memory")
     const queryResults = await this.memoryQueryResolver.resolveQueries(queries);
 
     // Step 3: Build memory context with resolved memories + latest memories

@@ -31,16 +31,17 @@ export class QueryService {
 
   /**
    * Extract queries from conversation messages.
+   * Generates queries for all available query types by default.
    * Returns domain-agnostic queries that can be routed to appropriate resolvers.
    *
    * @param messages - Conversation messages to analyze
-   * @param queryTypes - Allowed query types for routing
-   * @param categoryHints - Optional category hints for metadata (domain-specific)
+   * @param queryTypes - Available query types (defaults to all types)
+   * @param categoryHints - Optional category hints for metadata (e.g., memory categories)
    * @returns Array of queries with type and routing metadata
    */
   async extractQueries(
     messages: ChatMessage[],
-    queryTypes: QueryType[] = ["memory"],
+    queryTypes: QueryType[] = ["memory", "websearch", "calendar", "other"],
     categoryHints?: Record<string, string>
   ): Promise<Query[]> {
     try {

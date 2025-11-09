@@ -25,13 +25,13 @@ const messages: ChatMessage[] = [
   }
 ];
 
-// Updated to use new QueryService with query types and category hints
+// Updated to use new QueryService - generates all query types by default
 const queryService = new QueryService();
 
 const queries = await queryService.extractQueries(
   messages,
-  ["memory"],  // Only extract memory queries
-  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for routing
+  undefined,  // Use default: all query types
+  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for memory queries
 );
 console.log("Extracted queries:");
 console.log(queries);
