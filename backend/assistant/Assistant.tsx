@@ -165,7 +165,11 @@ export class Assistant {
       timestamp: new Date().toISOString()
     }];
 
-    const queries = await this.queryService.extractQueries(recentMessages, MEMORY_CATEGORY_DESCRIPTIONS);
+    const queries = await this.queryService.extractQueries(
+      recentMessages,
+      ["memory"],  // Only generate memory queries for now
+      MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for routing metadata
+    );
 
     // Step 2: Resolve queries to memories
     const queryResults = await this.memoryQueryResolver.resolveQueries(queries);

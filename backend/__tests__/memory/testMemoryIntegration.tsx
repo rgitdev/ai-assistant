@@ -32,7 +32,11 @@ console.log("=== Memory Integration Test ===");
 // Step 1: Generate queries using QueryService
 const queryService = new QueryService();
 
-const queries = await queryService.extractQueries(messages, MEMORY_CATEGORY_DESCRIPTIONS);
+const queries = await queryService.extractQueries(
+  messages,
+  ["memory"],  // Only generate memory queries
+  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for routing
+);
 console.log("Generated queries:");
 console.log(queries);
 
@@ -43,15 +47,19 @@ const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingServic
 
 const queryResults = await memoryQueryResolver.resolveQueries(queries);
 console.log("\nFound memories:");
-console.log(queryResults.map(r => ({
-  query: `${r.query.category}: ${r.query.query}`,
-  memory: { id: r.memory.id, title: r.memory.title, category: r.memory.category }
-})));
+console.log(queryResults.map(r => {
+  const category = r.query.metadata?.category || 'no category';
+  return {
+    query: `${r.query.type}|${category}: ${r.query.text}`,
+    memory: { id: r.memory.id, title: r.memory.title, category: r.memory.category }
+  };
+}));
 
 // Step 3: Show detailed results for debugging
 console.log("\nDetailed query results:");
 queryResults.forEach((result, index) => {
-  console.log(`${index + 1}. Query: "${result.query.category}: ${result.query.query}"`);
+  const category = result.query.metadata?.category || 'no category';
+  console.log(`${index + 1}. Query: "${result.query.type}|${category}: ${result.query.text}"`);
   console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });

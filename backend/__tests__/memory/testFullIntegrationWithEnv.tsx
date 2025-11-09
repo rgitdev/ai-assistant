@@ -63,7 +63,11 @@ try {
 // Step 1: Generate queries using QueryService
 const queryService = new QueryService();
 
-const queries = await queryService.extractQueries(messages, MEMORY_CATEGORY_DESCRIPTIONS);
+const queries = await queryService.extractQueries(
+  messages,
+  ["memory"],  // Only generate memory queries
+  MEMORY_CATEGORY_DESCRIPTIONS  // Category hints for routing
+);
 console.log("\nGenerated queries:");
 console.log(queries);
 
@@ -76,7 +80,8 @@ const queryResults = await memoryQueryResolver.resolveQueries(queries);
 // Step 3: Show detailed results for debugging
 console.log("\nDetailed query results:");
 queryResults.forEach((result, index) => {
-  console.log(`${index + 1}. Query: "${result.query.category}: ${result.query.query}"`);
+  const category = result.query.metadata?.category || 'no category';
+  console.log(`${index + 1}. Query: "${result.query.type}|${category}: ${result.query.text}"`);
   console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });

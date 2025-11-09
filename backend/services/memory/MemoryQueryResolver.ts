@@ -26,7 +26,7 @@ export class MemoryQueryResolver {
 
   /**
    * Resolves queries into matching memory records.
-   * Does NOT generate queries - accepts pre-generated Query objects.
+   * Only processes queries with type="memory", ignoring others.
    *
    * @param queries - Array of pre-generated Query objects
    * @returns Array of QueryResult objects with resolved memories
@@ -36,10 +36,13 @@ export class MemoryQueryResolver {
       return [];
     }
 
+    // Filter to only memory queries
+    const memoryQueries = queries.filter(q => q.type === "memory");
+
     const queryResults: QueryResult[] = [];
 
-    // Process each query individually
-    for (const query of queries) {
+    // Process each memory query individually
+    for (const query of memoryQueries) {
       try {
         const memory = await this.resolveSingleQuery(query);
         if (memory) {
@@ -49,7 +52,7 @@ export class MemoryQueryResolver {
           });
         }
       } catch (error) {
-        console.error(`Error resolving query "${query.category}: ${query.query}":`, error);
+        console.error(`Error resolving query "${query.type}: ${query.text}":`, error);
         // Continue with other queries even if one fails
       }
     }
@@ -59,28 +62,34 @@ export class MemoryQueryResolver {
   }
 
   /**
-   * Resolves a single query to the best matching memory.
+   * Resolves a single memory query to the best matching memory.
    *
-   * @param query - Query object with category and query text
+   * @param query - Query object with type="memory" and optional category in metadata
    * @returns The best matching MemoryRecord or undefined if none found
    */
   private async resolveSingleQuery(query: Query): Promise<MemoryRecord | undefined> {
-    // Convert category string to MemoryCategory enum
-    const memoryCategory = parseMemoryCategory(query.category);
+    // Extract category from metadata if available
+    const category = query.metadata?.category;
 
-    // Search for memories using category-based search
+    // Search for memories using category-based search if category provided
     const searchOptions: MemorySearchOptions = {
       topK: 1, // Get only the best match
       minScore: 0.3, // Lower threshold for category-based search
     };
 
-    const memories = await this.memorySearchService.searchMemoriesByCategory(
-      memoryCategory,
-      query.query,
-      searchOptions
-    );
-
-    return memories.length > 0 ? memories[0] : undefined;
+    if (category) {
+      const memoryCategory = parseMemoryCategory(category);
+      const memories = await this.memorySearchService.searchMemoriesByCategory(
+        memoryCategory,
+        query.text,
+        searchOptions
+      );
+      return memories.length > 0 ? memories[0] : undefined;
+    } else {
+      // No category specified, search all memories
+      const memories = await this.memorySearchService.searchMemories(query.text, searchOptions);
+      return memories.length > 0 ? memories[0] : undefined;
+    }
   }
 
   /**
