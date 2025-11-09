@@ -9,19 +9,11 @@ interface MemoryStorage {
   [id: string]: MemoryRecord;
 }
 
-interface CacheEntry {
-  data: MemoryStorage;
-  timestamp: number;
-}
-
 export class MemoryFileRepository implements IMemoryRepository {
   private filePath: string;
-  private cache: CacheEntry | null = null;
-  private readonly cacheTTL: number; // TTL in milliseconds
 
-  constructor(filePath: string = "backend/data/memories.json", cacheTTLSeconds: number = 60) {
+  constructor(filePath: string = "backend/data/memories.json") {
     this.filePath = filePath;
-    this.cacheTTL = cacheTTLSeconds * 1000; // Convert to milliseconds
     this.ensureFileExists();
   }
 
@@ -35,60 +27,17 @@ export class MemoryFileRepository implements IMemoryRepository {
     }
   }
 
-  /**
-   * Check if cache is valid based on TTL.
-   */
-  private isCacheValid(): boolean {
-    if (!this.cache) {
-      return false;
-    }
-    const now = Date.now();
-    return (now - this.cache.timestamp) < this.cacheTTL;
-  }
-
-  /**
-   * Invalidate the cache (called on write operations).
-   */
-  private invalidateCache(): void {
-    this.cache = null;
-  }
-
   private async readStorage(): Promise<MemoryStorage> {
-    // Return cached data if valid
-    if (this.isCacheValid() && this.cache) {
-      return this.cache.data;
-    }
-
-    // Read from file and update cache
     try {
       const data = fs.readFileSync(this.filePath, "utf8");
-      const storage = JSON.parse(data);
-
-      // Update cache
-      this.cache = {
-        data: storage,
-        timestamp: Date.now()
-      };
-
-      return storage;
+      return JSON.parse(data);
     } catch (error) {
-      const emptyStorage = {};
-
-      // Cache empty storage too
-      this.cache = {
-        data: emptyStorage,
-        timestamp: Date.now()
-      };
-
-      return emptyStorage;
+      return {};
     }
   }
 
   private async writeStorage(storage: MemoryStorage): Promise<void> {
     fs.writeFileSync(this.filePath, JSON.stringify(storage, null, 2));
-
-    // Invalidate cache on write
-    this.invalidateCache();
   }
 
   async createMemory(memoryData: MemoryCreateInput): Promise<MemoryRecord> {
