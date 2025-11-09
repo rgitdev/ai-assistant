@@ -12,6 +12,23 @@ export enum MemoryCategory {
 }
 
 /**
+ * Descriptions for each memory category, used for query generation and documentation.
+ * Kept together with MemoryCategory enum following "Keep related data together" principle.
+ */
+export const MEMORY_CATEGORY_DESCRIPTIONS: Record<MemoryCategory, string> = {
+  [MemoryCategory.ASSISTANT_PERSONA]: 'Personal information, characteristics, preferences, and biographical details about the assistant',
+  [MemoryCategory.USER_PROFILE]: 'Personal information, characteristics, preferences, and biographical details about the user',
+  [MemoryCategory.CONVERSATION]: 'Past discussions, dialogue history, and conversational context between user and assistant',
+  [MemoryCategory.TASK]: 'Work items, projects, assignments, and task-related information including progress and outcomes',
+  [MemoryCategory.PREFERENCE]: 'User choices, settings, likes/dislikes, and behavioral preferences across different contexts',
+  [MemoryCategory.CONTEXT]: 'Environmental information, situational details, and contextual background for interactions',
+  [MemoryCategory.KNOWLEDGE]: 'Facts, learned information, domain expertise, and educational content shared or discussed',
+  [MemoryCategory.RELATIONSHIP]: 'Connections between people, entities, or concepts; interpersonal dynamics and associations',
+  [MemoryCategory.GOAL]: 'Objectives, targets, aspirations, and desired outcomes expressed by the user',
+  [MemoryCategory.OTHER]: 'Miscellaneous information that doesn\'t fit into other specific categories'
+};
+
+/**
  * Parses a string to MemoryCategory enum with case-insensitive lookup
  * @param categoryString The category string to parse
  * @returns The corresponding MemoryCategory enum value or OTHER if not found
@@ -21,7 +38,7 @@ export function parseMemoryCategory(categoryString: string): MemoryCategory {
   Object.values(MemoryCategory).forEach(category => {
     categoryMap.set(category.toLowerCase(), category);
   });
-  
+
   return categoryMap.get(categoryString.toLowerCase()) || MemoryCategory.OTHER;
 }
 

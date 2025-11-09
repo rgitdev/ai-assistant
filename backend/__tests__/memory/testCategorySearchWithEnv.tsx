@@ -1,10 +1,13 @@
 import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
-import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
+import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
+import { Query } from "@backend/services/query/QueryService";
 import { ChatMessage } from "@backend/models/ChatMessage";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 import { AssistantService } from "@backend/services/assistant/AssistantService";
+import { VectorStore } from "@backend/client/vector/VectorStore";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -12,7 +15,9 @@ process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
 // Test category-based search with fresh memories
 const assistantService = new AssistantService();
 const memoryCreator = new MemoryCreator();
-const memoryAnswerQueryService = new MemoryAnswerQueryService();
+const vectorStore = new VectorStore();
+const embeddingService = new OpenAIEmbeddingService();
+const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
 
 console.log("=== Category Search Test with Test File ===");
 console.log("Using test file:", process.env.MEMORY_TEST_FILE);
@@ -61,17 +66,18 @@ try {
   console.error("Error creating memories:", error);
 }
 
-// Test category-based search
-const testQueries = [
-  "conversation: Italian learning goals and interests",
-  "user_profile: user preferences for Italian conversation topics",
-  "other: assistant communication style"
+// Test search using simplified Query interface (no category metadata)
+const testQueries: Query[] = [
+  { type: "memory", text: "Italian learning goals and interests" },
+  { type: "memory", text: "user preferences for Italian conversation topics" },
+  { type: "memory", text: "assistant communication style" }
 ];
 
 console.log("\nTesting category-based search with queries:");
 console.log(testQueries);
 
-const memories = await memoryAnswerQueryService.findMemoriesForQueries(testQueries);
+const queryResults = await memoryQueryResolver.resolveQueries(testQueries);
+const memories = queryResults.map(r => r.memory);
 console.log("\nFound memories:");
 memories.forEach((memory, index) => {
   console.log(`${index + 1}. ${memory.title} (Category: ${memory.category})`);

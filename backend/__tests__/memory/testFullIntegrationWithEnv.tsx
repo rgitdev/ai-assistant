@@ -1,11 +1,13 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
-import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
-import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
+import { QueryService } from "@backend/services/query/QueryService";
+import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
 import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 import { AssistantService } from "@backend/services/assistant/AssistantService";
+import { VectorStore } from "@backend/client/vector/VectorStore";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -57,22 +59,23 @@ try {
   console.error("Error creating memories:", error);
 }
 
-// Step 1: Generate queries using MemoryQueryService
-const memoryQueryService = new MemoryQueryService();
-const queries = await memoryQueryService.extractQueries(messages);
+// Step 1: Generate all query types using QueryService
+const queryService = new QueryService();
+
+const queries = await queryService.extractQueries(messages);
 console.log("\nGenerated queries:");
 console.log(queries);
 
-// Step 2: Find memories using MemoryAnswerQueryService (unified API)
-const memoryAnswerQueryService = new MemoryAnswerQueryService();
-const queryResults = await memoryAnswerQueryService.findMemoriesForQueries(queries);
+// Step 2: Resolve memory queries using MemoryQueryResolver (filters to type="memory")
+const vectorStore = new VectorStore();
+const embeddingService = new OpenAIEmbeddingService();
+const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
+const queryResults = await memoryQueryResolver.resolveQueries(queries);
 
 // Step 3: Show detailed results for debugging
 console.log("\nDetailed query results:");
 queryResults.forEach((result, index) => {
-  console.log(`${index + 1}. Query: "${result.query}"`);
-  console.log(`   Category: "${result.category}"`);
-  console.log(`   Search: "${result.searchQuery}"`);
+  console.log(`${index + 1}. Query: "${result.query.type}: ${result.query.text}"`);
   console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });

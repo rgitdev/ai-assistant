@@ -1,7 +1,6 @@
 
 import { ChatMessage } from "@backend/models/ChatMessage";
-import { ConversationRepositoryFactory } from "@backend/repository/ConversationRepositoryFactory";
-import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
+import { QueryService } from "@backend/services/query/QueryService";
 
 
 const messages: ChatMessage[] = [
@@ -13,7 +12,7 @@ const messages: ChatMessage[] = [
   },
   {
     "id": "bbed7e84-0d4f-4eea-a401-d8b816c87c36",
-    "content": "Bonjour, my dear Radek! How thoughtful of you to inquire—why, I am feeling positively radiant today, surrounded by all the comforts one expects of a Rochefort and, naturellement, basking in Salt’s magnificent company. His fur is simply immaculate; one might say even the finest silks would weep with envy! Oh-hohohoho!\n\nBut truly, is there not something delightfully invigorating about this hour? The day stretches before us—a blank canvas of possibility and adventure! I trust you have not allowed yourself to be tethered by anything dreadfully tiresome, such as spreadsheets or—mon Dieu—commuter trains? Do share: what little spark has found its way into your day, cher ami?",
+    "content": "Bonjour, my dear Radek! How thoughtful of you to inquire—why, I am feeling positively radiant today, surrounded by all the comforts one expects of a Rochefort and, naturellement, basking in Salt's magnificent company. His fur is simply immaculate; one might say even the finest silks would weep with envy! Oh-hohohoho!\n\nBut truly, is there not something delightfully invigorating about this hour? The day stretches before us—a blank canvas of possibility and adventure! I trust you have not allowed yourself to be tethered by anything dreadfully tiresome, such as spreadsheets or—mon Dieu—commuter trains? Do share: what little spark has found its way into your day, cher ami?",
     "role": "assistant",
     "timestamp": "2025-09-03T21:37:38.904Z"
   },
@@ -25,6 +24,9 @@ const messages: ChatMessage[] = [
   }
 ];
 
-const memoryQueryService = new MemoryQueryService();
-const queries = await memoryQueryService.extractQueries(messages);
+// Updated to use new QueryService - generates all query types by default
+const queryService = new QueryService();
+
+const queries = await queryService.extractQueries(messages);
+console.log("Extracted queries:");
 console.log(queries);

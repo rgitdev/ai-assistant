@@ -1,8 +1,10 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
-import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
-import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
+import { QueryService } from "@backend/services/query/QueryService";
+import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
+import { VectorStore } from "@backend/client/vector/VectorStore";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
-// Test the integration between MemoryQueryService and MemoryAnswerQueryService
+// Test the integration between QueryService and MemoryQueryResolver
 const messages: ChatMessage[] = [
   {
     "id": "dcbf4496-2b28-4f6b-af89-37fe7726b919",
@@ -26,26 +28,30 @@ const messages: ChatMessage[] = [
 
 console.log("=== Memory Integration Test ===");
 
-// Step 1: Generate queries using MemoryQueryService
-const memoryQueryService = new MemoryQueryService();
-const queries = await memoryQueryService.extractQueries(messages);
+// Step 1: Generate all query types using QueryService
+const queryService = new QueryService();
+
+const queries = await queryService.extractQueries(messages);
 console.log("Generated queries:");
 console.log(queries);
 
-// Step 2: Find memories using MemoryAnswerQueryService
-const memoryAnswerQueryService = new MemoryAnswerQueryService();
-const memories = await memoryAnswerQueryService.findMemoriesForQueries(queries);
+// Step 2: Resolve memory queries using MemoryQueryResolver (filters to type="memory")
+const vectorStore = new VectorStore();
+const embeddingService = new OpenAIEmbeddingService();
+const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
+
+const queryResults = await memoryQueryResolver.resolveQueries(queries);
 console.log("\nFound memories:");
-console.log(memories.map(m => ({ id: m.id, title: m.title, category: m.category })));
+console.log(queryResults.map(r => ({
+  query: `${r.query.type}: ${r.query.text}`,
+  memory: { id: r.memory.id, title: r.memory.title, category: r.memory.category }
+})));
 
 // Step 3: Show detailed results for debugging
-const detailedResults = await memoryAnswerQueryService.findMemoriesForQueriesDetailed(queries);
 console.log("\nDetailed query results:");
-detailedResults.forEach((result, index) => {
-  console.log(`${index + 1}. Query: "${result.query}"`);
-  console.log(`   Category: "${result.category}"`);
-  console.log(`   Search: "${result.searchQuery}"`);
-  console.log(`   Memory: ${result.memory ? `Found (${result.memory.title})` : 'Not found'}`);
+queryResults.forEach((result, index) => {
+  console.log(`${index + 1}. Query: "${result.query.type}: ${result.query.text}"`);
+  console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });
 
