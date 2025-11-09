@@ -1,11 +1,14 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
-import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
-import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
+import { QueryService } from "@backend/services/query/QueryService";
+import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
 import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 import { AssistantService } from "@backend/services/assistant/AssistantService";
+import { MemoryCategory } from "@backend/models/Memory";
+import { VectorStore } from "@backend/client/vector/VectorStore";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
 // Set environment variable for test file
 process.env.MEMORY_TEST_FILE = "backend/data/test-memories.json";
@@ -57,22 +60,35 @@ try {
   console.error("Error creating memories:", error);
 }
 
-// Step 1: Generate queries using MemoryQueryService
-const memoryQueryService = new MemoryQueryService();
-const queries = await memoryQueryService.extractQueries(messages);
+// Step 1: Generate queries using QueryService
+const queryService = new QueryService();
+const categoryDescriptions = {
+  [MemoryCategory.ASSISTANT_PERSONA]: 'Personal information, characteristics, preferences, and biographical details about the assistant',
+  [MemoryCategory.USER_PROFILE]: 'Personal information, characteristics, preferences, and biographical details about the user',
+  [MemoryCategory.CONVERSATION]: 'Past discussions, dialogue history, and conversational context between user and assistant',
+  [MemoryCategory.TASK]: 'Work items, projects, assignments, and task-related information including progress and outcomes',
+  [MemoryCategory.PREFERENCE]: 'User choices, settings, likes/dislikes, and behavioral preferences across different contexts',
+  [MemoryCategory.CONTEXT]: 'Environmental information, situational details, and contextual background for interactions',
+  [MemoryCategory.KNOWLEDGE]: 'Facts, learned information, domain expertise, and educational content shared or discussed',
+  [MemoryCategory.RELATIONSHIP]: 'Connections between people, entities, or concepts; interpersonal dynamics and associations',
+  [MemoryCategory.GOAL]: 'Objectives, targets, aspirations, and desired outcomes expressed by the user',
+  [MemoryCategory.OTHER]: 'Miscellaneous information that doesn\'t fit into other specific categories'
+};
+
+const queries = await queryService.extractQueries(messages, categoryDescriptions);
 console.log("\nGenerated queries:");
 console.log(queries);
 
-// Step 2: Find memories using MemoryAnswerQueryService (unified API)
-const memoryAnswerQueryService = new MemoryAnswerQueryService();
-const queryResults = await memoryAnswerQueryService.findMemoriesForQueries(queries);
+// Step 2: Resolve queries to memories using MemoryQueryResolver
+const vectorStore = new VectorStore();
+const embeddingService = new OpenAIEmbeddingService();
+const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
+const queryResults = await memoryQueryResolver.resolveQueries(queries);
 
 // Step 3: Show detailed results for debugging
 console.log("\nDetailed query results:");
 queryResults.forEach((result, index) => {
-  console.log(`${index + 1}. Query: "${result.query}"`);
-  console.log(`   Category: "${result.category}"`);
-  console.log(`   Search: "${result.searchQuery}"`);
+  console.log(`${index + 1}. Query: "${result.query.category}: ${result.query.query}"`);
   console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });

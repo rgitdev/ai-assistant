@@ -14,6 +14,8 @@ import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
 import { CreateConversationMemoryCommand } from "@backend/services/memory/commands/CreateConversationMemoryCommand";
 import { CreateUserProfileMemoryCommand } from "@backend/services/memory/commands/CreateUserProfileMemoryCommand";
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
+import { QueryService } from "@backend/services/query/QueryService";
+import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
 
 export class Assistant {
 
@@ -22,6 +24,8 @@ export class Assistant {
   memoryCreator: MemoryCreator;
   memoryProvider: MemoryProvider;
   memorySearchService: MemorySearchService;
+  queryService: QueryService;
+  memoryQueryResolver: MemoryQueryResolver;
 
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -44,6 +48,10 @@ export class Assistant {
     const vectorStore = new VectorStore();
     const embeddingService = new OpenAIEmbeddingService();
     this.memorySearchService = new MemorySearchService(vectorStore, embeddingService);
+
+    // Clean architecture: Query generation and memory resolution
+    this.queryService = new QueryService();
+    this.memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
   }
 
 
@@ -140,16 +148,42 @@ export class Assistant {
 
   /**
    * Orchestration method: Gather memory-related messages
-   * Combines memory search results and latest memories
+   * Clean query routing workflow:
+   * 1. Generate domain-agnostic queries from conversation
+   * 2. Resolve queries to specific memories
+   * 3. Assemble memory messages with builder pattern
    */
   private async getMemoryMessages(latestUserMessage: string): Promise<ConversationMessage[]> {
     const memoryMessages: ConversationMessage[] = [];
 
-    // Add search results from vector store
-    const foundMemories = await this.memorySearchService.searchMemories(latestUserMessage);
+    // Step 1: Generate queries from recent conversation context
+    // Convert last message to ChatMessage format for QueryService
+    const recentMessages: ChatMessage[] = [{
+      id: uuidv4(),
+      content: latestUserMessage,
+      role: 'user',
+      timestamp: new Date().toISOString()
+    }];
 
-    // Add latest memory messages
-    const formattedMemories = await this.memoryProvider.getFormattedMemories();
+    const categoryDescriptions = this.getCategoryDescriptions();
+    const queries = await this.queryService.extractQueries(recentMessages, categoryDescriptions);
+
+    // Step 2: Resolve queries to memories
+    const queryResults = await this.memoryQueryResolver.resolveQueries(queries);
+
+    // Step 3: Build memory context with resolved memories + latest memories
+    const builder = this.memoryProvider.builder()
+      .withLatestConversation()
+      .withUserProfile()
+      .withAssistantPersona();
+
+    // Add memories from query resolution
+    queryResults.forEach(result => {
+      builder.withMemory(result.memory);
+    });
+
+    const formattedMemories = await builder.build();
+
     if (formattedMemories && formattedMemories.trim().length > 0) {
       memoryMessages.push({
         role: "assistant",
@@ -158,6 +192,25 @@ export class Assistant {
     }
 
     return memoryMessages;
+  }
+
+  /**
+   * Get memory category descriptions for query generation.
+   * Kept here as it bridges domain knowledge to the query service.
+   */
+  private getCategoryDescriptions(): Record<string, string> {
+    return {
+      [MemoryCategory.ASSISTANT_PERSONA]: 'Personal information, characteristics, preferences, and biographical details about the assistant',
+      [MemoryCategory.USER_PROFILE]: 'Personal information, characteristics, preferences, and biographical details about the user',
+      [MemoryCategory.CONVERSATION]: 'Past discussions, dialogue history, and conversational context between user and assistant',
+      [MemoryCategory.TASK]: 'Work items, projects, assignments, and task-related information including progress and outcomes',
+      [MemoryCategory.PREFERENCE]: 'User choices, settings, likes/dislikes, and behavioral preferences across different contexts',
+      [MemoryCategory.CONTEXT]: 'Environmental information, situational details, and contextual background for interactions',
+      [MemoryCategory.KNOWLEDGE]: 'Facts, learned information, domain expertise, and educational content shared or discussed',
+      [MemoryCategory.RELATIONSHIP]: 'Connections between people, entities, or concepts; interpersonal dynamics and associations',
+      [MemoryCategory.GOAL]: 'Objectives, targets, aspirations, and desired outcomes expressed by the user',
+      [MemoryCategory.OTHER]: 'Miscellaneous information that doesn\'t fit into other specific categories'
+    };
   }
 
   /**

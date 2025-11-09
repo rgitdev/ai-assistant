@@ -1,8 +1,11 @@
 import { ChatMessage } from "@backend/models/ChatMessage";
-import { MemoryQueryService } from "@backend/services/memory/MemoryQueryService";
-import { MemoryAnswerQueryService } from "@backend/services/memory/MemoryAnswerQueryService";
+import { QueryService } from "@backend/services/query/QueryService";
+import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
+import { MemoryCategory } from "@backend/models/Memory";
+import { VectorStore } from "@backend/client/vector/VectorStore";
+import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 
-// Test the integration between MemoryQueryService and MemoryAnswerQueryService
+// Test the integration between QueryService and MemoryQueryResolver
 const messages: ChatMessage[] = [
   {
     "id": "dcbf4496-2b28-4f6b-af89-37fe7726b919",
@@ -26,26 +29,42 @@ const messages: ChatMessage[] = [
 
 console.log("=== Memory Integration Test ===");
 
-// Step 1: Generate queries using MemoryQueryService
-const memoryQueryService = new MemoryQueryService();
-const queries = await memoryQueryService.extractQueries(messages);
+// Step 1: Generate queries using QueryService
+const queryService = new QueryService();
+const categoryDescriptions = {
+  [MemoryCategory.ASSISTANT_PERSONA]: 'Personal information, characteristics, preferences, and biographical details about the assistant',
+  [MemoryCategory.USER_PROFILE]: 'Personal information, characteristics, preferences, and biographical details about the user',
+  [MemoryCategory.CONVERSATION]: 'Past discussions, dialogue history, and conversational context between user and assistant',
+  [MemoryCategory.TASK]: 'Work items, projects, assignments, and task-related information including progress and outcomes',
+  [MemoryCategory.PREFERENCE]: 'User choices, settings, likes/dislikes, and behavioral preferences across different contexts',
+  [MemoryCategory.CONTEXT]: 'Environmental information, situational details, and contextual background for interactions',
+  [MemoryCategory.KNOWLEDGE]: 'Facts, learned information, domain expertise, and educational content shared or discussed',
+  [MemoryCategory.RELATIONSHIP]: 'Connections between people, entities, or concepts; interpersonal dynamics and associations',
+  [MemoryCategory.GOAL]: 'Objectives, targets, aspirations, and desired outcomes expressed by the user',
+  [MemoryCategory.OTHER]: 'Miscellaneous information that doesn\'t fit into other specific categories'
+};
+
+const queries = await queryService.extractQueries(messages, categoryDescriptions);
 console.log("Generated queries:");
 console.log(queries);
 
-// Step 2: Find memories using MemoryAnswerQueryService
-const memoryAnswerQueryService = new MemoryAnswerQueryService();
-const memories = await memoryAnswerQueryService.findMemoriesForQueries(queries);
+// Step 2: Resolve queries to memories using MemoryQueryResolver
+const vectorStore = new VectorStore();
+const embeddingService = new OpenAIEmbeddingService();
+const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
+
+const queryResults = await memoryQueryResolver.resolveQueries(queries);
 console.log("\nFound memories:");
-console.log(memories.map(m => ({ id: m.id, title: m.title, category: m.category })));
+console.log(queryResults.map(r => ({
+  query: `${r.query.category}: ${r.query.query}`,
+  memory: { id: r.memory.id, title: r.memory.title, category: r.memory.category }
+})));
 
 // Step 3: Show detailed results for debugging
-const detailedResults = await memoryAnswerQueryService.findMemoriesForQueriesDetailed(queries);
 console.log("\nDetailed query results:");
-detailedResults.forEach((result, index) => {
-  console.log(`${index + 1}. Query: "${result.query}"`);
-  console.log(`   Category: "${result.category}"`);
-  console.log(`   Search: "${result.searchQuery}"`);
-  console.log(`   Memory: ${result.memory ? `Found (${result.memory.title})` : 'Not found'}`);
+queryResults.forEach((result, index) => {
+  console.log(`${index + 1}. Query: "${result.query.category}: ${result.query.query}"`);
+  console.log(`   Memory: ${result.memory.title}`);
   console.log("");
 });
 
