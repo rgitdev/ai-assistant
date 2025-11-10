@@ -16,7 +16,7 @@ import { CreateUserProfileMemoryCommand } from "@backend/services/memory/command
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 import { QueryService } from "@backend/services/query/QueryService";
 import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
-import { assistantLogger } from "@backend/utils/Logger";
+import { assistantLogger } from "@backend/assistant/AssistantLogger";
 
 export class Assistant {
 
@@ -63,7 +63,7 @@ export class Assistant {
    */
   async handleNewMessage(message: string): Promise<{ response: string; conversationId: string }> {
     const conversationId = await this.conversationService.createConversation();
-    assistantLogger.logMessageHandling(conversationId, message, true);
+    assistantLogger.logNewConversation(conversationId, message);
     return await this.handleMessage(conversationId, message);
   }
 
@@ -74,7 +74,7 @@ export class Assistant {
    * @returns Object containing the assistant's response and conversationId
    */
   async handleMessage(conversationId: string, message: string): Promise<{ response: string; conversationId: string }> {
-    assistantLogger.logMessageHandling(conversationId, message, false);
+    assistantLogger.logMessage(conversationId, message);
 
     // Add user message to conversation
     const userChatMessage: ChatMessage = {
@@ -85,7 +85,6 @@ export class Assistant {
     };
 
     await this.conversationService.addMessage(conversationId, userChatMessage);
-    assistantLogger.logConversationFlow('user_message_added', conversationId, { messageId: userChatMessage.id });
 
     // Generate and add assistant response
     const response = await this.generateAndAddResponse(conversationId);
@@ -108,7 +107,6 @@ export class Assistant {
       content: msg.content
     }));
 
-    assistantLogger.logConversationFlow('generating_response', conversationId, { messageCount: openAIMessages.length });
     const response = await this.sendConversation(openAIMessages);
 
     // Add assistant response to conversation
@@ -120,7 +118,7 @@ export class Assistant {
     };
 
     await this.conversationService.addMessage(conversationId, assistantChatMessage);
-    assistantLogger.logResponseGeneration(conversationId, openAIMessages.length, response);
+    assistantLogger.logResponseGenerated(conversationId, response);
 
     return response;
   }
@@ -174,11 +172,11 @@ export class Assistant {
 
     // Generate all query types (memory, websearch, calendar, etc.)
     const queries = await this.queryService.extractQueries(recentMessages);
-    assistantLogger.logQueryExtraction(latestUserMessage, queries);
+    assistantLogger.logQueryExtraction(queries);
 
     // Step 2: Resolve memory queries (MemoryQueryResolver filters to type="memory")
     const queryResults = await this.memoryQueryResolver.resolveQueries(queries);
-    assistantLogger.logQueryResolution(queries, queryResults);
+    assistantLogger.logQueryResolution(queryResults);
 
     // Step 3: Build memory context with resolved memories + latest memories
     const builder = this.memoryProvider.builder()
@@ -219,7 +217,7 @@ export class Assistant {
     messageId: string,
     newContent: string
   ): Promise<{ response: string; conversationId: string }> {
-    assistantLogger.logConversationFlow('edit_user_message', conversationId, { messageId, newContentPreview: newContent.substring(0, 100) });
+    assistantLogger.logMessageEdit(conversationId, messageId);
 
     // Step 1: Update last user message and remove following messages
     await this.conversationService.updateLastUserMessageAndRemoveFollowing(
@@ -246,8 +244,6 @@ export class Assistant {
     conversationId: string,
     category: MemoryCategory
   ): Promise<MemoryRecord | null> {
-    assistantLogger.logConversationFlow('create_memory_request', conversationId, { category });
-
     // Get conversation messages
     const messages = await this.conversationService.getConversationMessages(conversationId);
 
@@ -278,10 +274,10 @@ export class Assistant {
     );
 
     if (memory) {
-      assistantLogger.logMemoryCreation(conversationId, category, memory.id, true);
+      assistantLogger.logMemoryCreated(category, memory.id, conversationId);
       console.log(`Created ${category} memory for conversation ${conversationId}: ${memory.id}`);
     } else {
-      assistantLogger.logMemoryCreation(conversationId, category, undefined, false);
+      assistantLogger.logMemoryAlreadyExists(category, conversationId);
     }
 
     return memory;
