@@ -27,7 +27,7 @@ export class ConversationIndexingJob extends BaseJob {
       console.log('Starting conversation indexing job...');
       
       // Get only unindexed conversations
-      const conversations = await this.fetchConversation();
+      const conversations = await this.getUnindexedConversations();
       
       let indexedCount = 0;
       for (const conversation of conversations) {
@@ -69,22 +69,21 @@ export class ConversationIndexingJob extends BaseJob {
     }
   }
 
-  private async fetchConversation() {
+  private async getUnindexedConversations() {
     // Get all conversations
     const conversations = await this.conversationRepository.getConversations();
     
-    // Check all conversations in parallel
-    const vectorChecks = await Promise.all(
-      conversations.map(async (conversation) => {
-        const existingVectors = await this.vectorStore.getVectorsBySource(conversation.id, 'Conversation');
-        return { conversation, isIndexed: existingVectors.length > 0 };
-      })
-    );
+    // Get all conversation IDs
+    const conversationIds = conversations.map(conv => conv.id);
     
-    // Filter out already indexed conversations
-    return vectorChecks
-      .filter(check => !check.isIndexed)
-      .map(check => check.conversation);
+    // Get all indexed vectors for these conversations
+    const indexedVectors = await this.vectorStore.getVectorsBySources(conversationIds, 'Conversation');
+    
+    // Extract only sourceId from VectorRecord
+    const indexedSourceIds = new Set(indexedVectors.map(record => record.sourceId));
+    
+    // Retain only conversations with id not present in indexed objects
+    return conversations.filter(conversation => !indexedSourceIds.has(conversation.id));
   }
 
   private createConversationContent(messages: ChatMessage[]): string {

@@ -91,6 +91,13 @@ export class VectorStore {
     );
   }
 
+  async getVectorsBySources(sourceIds: string[], sourceType: string): Promise<VectorRecord[]> {
+    const storage = await this.readStorage();
+    return Object.values(storage).filter(
+      record => sourceIds.includes(record.sourceId) && record.sourceType === sourceType
+    );
+  }
+
   async updateVector(id: string, updates: Partial<Omit<VectorRecord, 'id' | 'createdAt' | 'updatedAt'>>): Promise<VectorRecord> {
     const storage = await this.readStorage();
     const existing = storage[id];
