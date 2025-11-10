@@ -3,13 +3,13 @@ import { VectorStore } from '../../client/vector/VectorStore';
 import { OpenAIEmbeddingService } from '../../client/openai/OpenAIEmbeddingService';
 import { IConversationRepository } from '@backend/repository/IConversationRepository';
 import { ConversationRepositoryFactory } from '@backend/repository/ConversationRepositoryFactory';
-import { ChatMessage, Conversation } from '../../models/ChatMessage';
-import { VectorRecord } from '../../models/VectorRecord';
+import { ChatMessage } from '../../models/ChatMessage';
+import { v4 as uuidv4 } from 'uuid';
 
 export class ConversationIndexingJob extends BaseJob {
   readonly name = 'conversation-indexing';
   readonly description = 'Update vector embeddings for new conversations';
-  readonly schedule = '*/1 * * * *'; // Every minute
+  readonly schedule = '*/1 * * * *'; // Every 15 minutes
 
   private conversationRepository: IConversationRepository;
   private vectorStore: VectorStore;
@@ -24,115 +24,67 @@ export class ConversationIndexingJob extends BaseJob {
 
   async execute() {
     try {
-      console.log('🧠 [conversation-indexing] Starting conversation indexing job...');
-
-      const conversations = await this.fetchConversations();
-      const candidates = await this.filterConversationsToIndex(conversations);
-
+      console.log('Starting conversation indexing job...');
+      
+      // Get only unindexed conversations
+      const conversations = await this.fetchConversation();
+      
       let indexedCount = 0;
-      let reindexedCount = 0;
-      let skippedCount = conversations.length - candidates.length;
-
-      for (const candidate of candidates) {
+      for (const conversation of conversations) {
         try {
-          const { embedding, messages } = await this.createEmbeddingForConversation(candidate.conversation.id);
-          await this.upsertVector(candidate, messages.length, embedding);
-          if (candidate.action === 'create') {
-            indexedCount++;
-            console.log(`🆕 [conversation-indexing] Indexed conversation ${candidate.conversation.id}`);
-          } else if (candidate.action === 'update') {
-            reindexedCount++;
-            console.log(`🔄 [conversation-indexing] Reindexed conversation ${candidate.conversation.id}`);
-          }
+          // Create content from conversation messages for embedding
+          const messages = await this.conversationRepository.getConversationMessages(conversation.id);
+          const conversationContent = this.createConversationContent(messages);
+          
+          // Create embedding for the conversation content
+          const embedding = await this.embeddingService.createEmbedding(conversationContent);
+          
+          // Store in vector store
+          await this.vectorStore.storeVector({
+            embedding,
+            embeddingModel: OpenAIEmbeddingService.EMBEDDING_MODEL,
+            sourceType: 'Conversation',
+            sourceId: conversation.id,
+            metadata: {
+              title: conversation.name || 'Untitled Conversation',
+              messageCount: messages.length,
+              createdAt: conversation.createdAt,
+              updatedAt: conversation.updatedAt
+            }
+          });
+
+          indexedCount++;
+          console.log(`Indexed conversation ${conversation.id}`);
         } catch (error) {
-          console.error(`Failed to index conversation ${candidate.conversation.id}:`, error);
+          console.error(`Failed to index conversation ${conversation.id}:`, error);
         }
       }
 
       return this.createSuccessResult(
-        `Conversation indexing completed. Indexed ${indexedCount}, reindexed ${reindexedCount}, skipped ${skippedCount}.`,
-        { indexedCount, reindexedCount, skippedCount, totalConversations: conversations.length }
+        `Conversation indexing completed. Indexed ${indexedCount} new conversations.`,
+        { indexedCount, totalConversations: conversations.length }
       );
     } catch (error) {
       return this.createErrorResult(`Conversation indexing failed: ${error}`);
     }
   }
 
-  // --------------------
-  // Internal helpers
-  // --------------------
-
-  private async fetchConversations(): Promise<Conversation[]> {
-    return this.conversationRepository.getConversations();
-  }
-
-  private async getNewestVector(conversationId: string): Promise<VectorRecord | undefined> {
-    const vectors = await this.vectorStore.getVectorsBySource(conversationId, 'Conversation');
-    if (vectors.length === 0) return undefined;
-    return vectors
-      .slice()
-      .sort((a, b) => new Date(b.updatedAt as any).getTime() - new Date(a.updatedAt as any).getTime())[0];
-  }
-
-  private determineAction(conversation: Conversation, newestVector?: VectorRecord): 'create' | 'update' | 'skip' {
-    if (!newestVector) return 'create';
-
-    const conversationUpdatedAt = new Date(conversation.updatedAt || conversation.createdAt);
-    const vectorUpdatedAt = new Date((newestVector.updatedAt as any) || (newestVector.createdAt as any));
-    return conversationUpdatedAt.getTime() > vectorUpdatedAt.getTime() ? 'update' : 'skip';
-  }
-
-  private async filterConversationsToIndex(conversations: Conversation[]): Promise<Array<{ conversation: Conversation; action: 'create' | 'update'; targetVectorId?: string }>> {
-    const results: Array<{ conversation: Conversation; action: 'create' | 'update'; targetVectorId?: string }> = [];
-    for (const conversation of conversations) {
-      const newest = await this.getNewestVector(conversation.id);
-      const action = this.determineAction(conversation, newest);
-      if (action === 'skip') continue;
-      results.push({ conversation, action, targetVectorId: newest?.id });
-    }
-    return results;
-  }
-
-  private async createEmbeddingForConversation(conversationId: string): Promise<{ embedding: number[]; messages: ChatMessage[] }> {
-    const messages = await this.conversationRepository.getConversationMessages(conversationId);
-    const content = this.createConversationContent(messages);
-    const embedding = await this.embeddingService.createEmbedding(content);
-    return { embedding, messages };
-  }
-
-  private async upsertVector(
-    candidate: { conversation: Conversation; action: 'create' | 'update'; targetVectorId?: string },
-    messageCount: number,
-    embedding: number[]
-  ): Promise<void> {
-    const { conversation, action, targetVectorId } = candidate;
-    const baseMetadata = {
-      title: conversation.name || 'Untitled Conversation',
-      messageCount,
-      createdAt: conversation.createdAt,
-      updatedAt: conversation.updatedAt,
-    } as Record<string, any>;
-
-    if (action === 'create') {
-      await this.vectorStore.storeVector({
-        embedding,
-        embeddingModel: OpenAIEmbeddingService.EMBEDDING_MODEL,
-        sourceType: 'Conversation',
-        sourceId: conversation.id,
-        metadata: baseMetadata,
-      });
-      return;
-    }
-
-    if (action === 'update' && targetVectorId) {
-      await this.vectorStore.updateVector(targetVectorId, {
-        embedding,
-        embeddingModel: OpenAIEmbeddingService.EMBEDDING_MODEL,
-        sourceType: 'Conversation',
-        sourceId: conversation.id,
-        metadata: baseMetadata,
-      });
-    }
+  private async fetchConversation() {
+    // Get all conversations
+    const conversations = await this.conversationRepository.getConversations();
+    
+    // Check all conversations in parallel
+    const vectorChecks = await Promise.all(
+      conversations.map(async (conversation) => {
+        const existingVectors = await this.vectorStore.getVectorsBySource(conversation.id, 'Conversation');
+        return { conversation, isIndexed: existingVectors.length > 0 };
+      })
+    );
+    
+    // Filter out already indexed conversations
+    return vectorChecks
+      .filter(check => !check.isIndexed)
+      .map(check => check.conversation);
   }
 
   private createConversationContent(messages: ChatMessage[]): string {
@@ -143,12 +95,8 @@ export class ConversationIndexingJob extends BaseJob {
   }
 
   async canRun(): Promise<boolean> {
-    // Check if embedding service is available
-    try {
-      await this.embeddingService.createEmbedding('test');
-      return true;
-    } catch {
-      return false;
-    }
+    // Check environment variable (reloaded with each call)
+    const enabled = process.env.ENABLE_CONVERSATION_INDEXING;
+    return enabled === 'true' || enabled === '1';
   }
 }
