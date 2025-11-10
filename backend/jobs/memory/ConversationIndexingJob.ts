@@ -26,19 +26,12 @@ export class ConversationIndexingJob extends BaseJob {
     try {
       console.log('Starting conversation indexing job...');
       
-      // Get all conversations
-      const conversations = await this.conversationRepository.getConversations();
+      // Get only unindexed conversations
+      const conversations = await this.getUnindexedConversations();
       
       let indexedCount = 0;
       for (const conversation of conversations) {
         try {
-          // Check if conversation has already been indexed
-          const existingVectors = await this.vectorStore.getVectorsBySource(conversation.id, 'Conversation');
-          if (existingVectors.length > 0) {
-            console.log(`Conversation ${conversation.id} already indexed, skipping...`);
-            continue;
-          }
-
           // Create content from conversation messages for embedding
           const messages = await this.conversationRepository.getConversationMessages(conversation.id);
           const conversationContent = this.createConversationContent(messages);
@@ -76,6 +69,23 @@ export class ConversationIndexingJob extends BaseJob {
     }
   }
 
+  private async getUnindexedConversations() {
+    // Get all conversations
+    const conversations = await this.conversationRepository.getConversations();
+    
+    // Get all conversation IDs
+    const conversationIds = conversations.map(conv => conv.id);
+    
+    // Get all indexed vectors for these conversations
+    const indexedVectors = await this.vectorStore.getVectorsBySources(conversationIds, 'Conversation');
+    
+    // Extract only sourceId from VectorRecord
+    const indexedSourceIds = new Set(indexedVectors.map(record => record.sourceId));
+    
+    // Retain only conversations with id not present in indexed objects
+    return conversations.filter(conversation => !indexedSourceIds.has(conversation.id));
+  }
+
   private createConversationContent(messages: ChatMessage[]): string {
     // Combine all messages into a single text for embedding
     return messages
@@ -84,12 +94,8 @@ export class ConversationIndexingJob extends BaseJob {
   }
 
   async canRun(): Promise<boolean> {
-    // Check if embedding service is available
-    try {
-      await this.embeddingService.createEmbedding('test');
-      return true;
-    } catch {
-      return false;
-    }
+    // Check environment variable (reloaded with each call)
+    const enabled = process.env.ENABLE_CONVERSATION_INDEXING;
+    return enabled === 'true' || enabled === '1';
   }
 }
