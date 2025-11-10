@@ -16,6 +16,7 @@ import { CreateUserProfileMemoryCommand } from "@backend/services/memory/command
 import { CreateAssistantPersonaMemoryCommand } from "@backend/services/memory/commands/CreateAssistantPersonaMemoryCommand";
 import { QueryService } from "@backend/services/query/QueryService";
 import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
+import { assistantLogger } from "@backend/utils/Logger";
 
 export class Assistant {
 
@@ -62,6 +63,7 @@ export class Assistant {
    */
   async handleNewMessage(message: string): Promise<{ response: string; conversationId: string }> {
     const conversationId = await this.conversationService.createConversation();
+    assistantLogger.logMessageHandling(conversationId, message, true);
     return await this.handleMessage(conversationId, message);
   }
 
@@ -72,6 +74,8 @@ export class Assistant {
    * @returns Object containing the assistant's response and conversationId
    */
   async handleMessage(conversationId: string, message: string): Promise<{ response: string; conversationId: string }> {
+    assistantLogger.logMessageHandling(conversationId, message, false);
+
     // Add user message to conversation
     const userChatMessage: ChatMessage = {
       id: uuidv4(),
@@ -81,6 +85,7 @@ export class Assistant {
     };
 
     await this.conversationService.addMessage(conversationId, userChatMessage);
+    assistantLogger.logConversationFlow('user_message_added', conversationId, { messageId: userChatMessage.id });
 
     // Generate and add assistant response
     const response = await this.generateAndAddResponse(conversationId);
@@ -103,6 +108,7 @@ export class Assistant {
       content: msg.content
     }));
 
+    assistantLogger.logConversationFlow('generating_response', conversationId, { messageCount: openAIMessages.length });
     const response = await this.sendConversation(openAIMessages);
 
     // Add assistant response to conversation
@@ -114,6 +120,7 @@ export class Assistant {
     };
 
     await this.conversationService.addMessage(conversationId, assistantChatMessage);
+    assistantLogger.logResponseGeneration(conversationId, openAIMessages.length, response);
 
     return response;
   }
@@ -167,9 +174,11 @@ export class Assistant {
 
     // Generate all query types (memory, websearch, calendar, etc.)
     const queries = await this.queryService.extractQueries(recentMessages);
+    assistantLogger.logQueryExtraction(latestUserMessage, queries);
 
     // Step 2: Resolve memory queries (MemoryQueryResolver filters to type="memory")
     const queryResults = await this.memoryQueryResolver.resolveQueries(queries);
+    assistantLogger.logQueryResolution(queries, queryResults);
 
     // Step 3: Build memory context with resolved memories + latest memories
     const builder = this.memoryProvider.builder()
@@ -210,6 +219,8 @@ export class Assistant {
     messageId: string,
     newContent: string
   ): Promise<{ response: string; conversationId: string }> {
+    assistantLogger.logConversationFlow('edit_user_message', conversationId, { messageId, newContentPreview: newContent.substring(0, 100) });
+
     // Step 1: Update last user message and remove following messages
     await this.conversationService.updateLastUserMessageAndRemoveFollowing(
       conversationId,
@@ -235,6 +246,8 @@ export class Assistant {
     conversationId: string,
     category: MemoryCategory
   ): Promise<MemoryRecord | null> {
+    assistantLogger.logConversationFlow('create_memory_request', conversationId, { category });
+
     // Get conversation messages
     const messages = await this.conversationService.getConversationMessages(conversationId);
 
@@ -265,7 +278,10 @@ export class Assistant {
     );
 
     if (memory) {
+      assistantLogger.logMemoryCreation(conversationId, category, memory.id, true);
       console.log(`Created ${category} memory for conversation ${conversationId}: ${memory.id}`);
+    } else {
+      assistantLogger.logMemoryCreation(conversationId, category, undefined, false);
     }
 
     return memory;
