@@ -1,11 +1,11 @@
 // backend/services/assistant/tools/SearchMemoriesTool.ts
 import { Tool } from '../ToolRegistry';
-import { IMemoryRepository } from '../../repository/memory/IMemoryRepository';
+import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
 
 export class SearchMemoriesTool implements Tool {
   name = "search_memories";
-  description = "Search through stored memories using text search. Returns relevant memories matching the query.";
-  
+  description = "Search through stored memories using semantic search. Returns relevant memories matching the query.";
+
   parameters = {
     type: "object",
     properties: {
@@ -22,13 +22,13 @@ export class SearchMemoriesTool implements Tool {
     required: ["query"]
   };
 
-  constructor(private memoryRepository: IMemoryRepository) {}
+  constructor(private memorySearchService: MemorySearchService) {}
 
   async execute(args: { query: string; limit?: number }): Promise<any> {
     const { query, limit = 5 } = args;
-    
-    const memories = await this.memoryRepository.findMemoriesByText(query, limit);
-    
+
+    const memories = await this.memorySearchService.searchMemories(query, { topK: limit });
+
     return {
       count: memories.length,
       memories: memories.map(m => ({
