@@ -12,9 +12,11 @@
     "webapp": "bun --hot webapp/index.tsx",
     "frontend": "bun --hot frontend/src/index.tsx",
     "webapp2": "bun --hot webapp2/src/server.tsx",
-    "backend": "bun --hot backend/index.tsx"
+    "backend": "bun --hot backend/index.tsx",
+    "mcp": "bun backend/mcp-server.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.21.1",
     "@qdrant/js-client-rest": "^1.15.1",
     "@types/uuid": "^10.0.0",
     "date-fns": "^4.1.0",
