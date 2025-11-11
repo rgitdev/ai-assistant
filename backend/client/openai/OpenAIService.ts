@@ -1,4 +1,4 @@
-import type { ChatCompletion } from "openai/resources/chat/completions";
+import type { ChatCompletion, ChatCompletionTool } from "openai/resources/chat/completions";
 import { OpenAIChatService } from "./OpenAIChatService";
 import { OpenAIImageService } from "./OpenAIImageService";
 
@@ -9,6 +9,9 @@ export type Base64String = string;
 
 export type JsonString = string;
 
+// Callback used to execute a tool/function call emitted by the model
+export type ToolExecutor = (name: string, args: any) => Promise<any>;
+
 export interface ConversationMessage {
   role: "user" | "assistant" | "system";
   content: string;
@@ -17,6 +20,18 @@ export interface ConversationMessage {
 export interface IOpenAIService {
   sendChatMessage(systemPrompt: string, message: string): Promise<JsonString>;
   sendChatMessages(systemPrompt: string, messages: ConversationMessage[]): Promise<JsonString>;
+  /**
+   * Send a conversation with OpenAI tool-calling support.
+   * The provided toolExecutor will be invoked for each tool call returned by the model.
+   */
+  sendConversationWithTools(
+    systemPrompt: string,
+    messages: ConversationMessage[],
+    tools: ChatCompletionTool[] | undefined,
+    toolExecutor: ToolExecutor,
+    options?: { maxToolIterations?: number; toolChoice?: "auto" | "none" }
+  ): Promise<JsonString>;
+  
   generateImage(prompt: string, model?: string): Promise<UrlString>;
   processImageFromUrl(imageUrl: UrlString, systemPrompt: string, model?: string): Promise<JsonString>;
   processImageFromBase64(imageBase64: Base64String, systemPrompt: string, model?: string): Promise<JsonString>;
@@ -52,6 +67,29 @@ export class OpenAIService implements IOpenAIService {
 
   async sendMessages(systemPrompt: string, messages: ConversationMessage[]): Promise<JsonString> {
     return this.chatService.sendConversation(systemPrompt, messages, { type: "json_object" });
+  }
+
+  async sendConversationWithTools(
+    systemPrompt: string,
+    messages: ConversationMessage[],
+    tools: ChatCompletionTool[] | undefined,
+    toolExecutor: ToolExecutor,
+    options?: { maxToolIterations?: number; toolChoice?: "auto" | "none" }
+  ): Promise<JsonString> {
+    // Delegate to chat service implementation
+    // Response format is text by default when tools are involved
+    // Observers and Langfuse handling are performed inside chat service
+    // The chat service will loop until tool-calling completes or max iterations reached
+    // and return the final assistant message content.
+    // Keeping method on this facade to avoid leaking chat service details to callers.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.chatService.sendConversationWithTools(
+      systemPrompt,
+      messages,
+      tools,
+      toolExecutor,
+      options
+    );
   }
 
   async generateImage(prompt: string, model: string = OpenAIService.DALL_E_3): Promise<UrlString> {

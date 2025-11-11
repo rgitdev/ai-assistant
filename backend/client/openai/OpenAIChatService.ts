@@ -1,9 +1,10 @@
 import OpenAI, { toFile } from "openai";
 import Langfuse, { observeOpenAI } from "langfuse";
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
 import type { CompletionUsage } from "openai/resources/completions";
 import type { ChatCompletion } from "openai/resources/chat/completions";
 import type { ConversationMessage } from "./OpenAIService";
+import type { ToolExecutor } from "./OpenAIService";
 
 
 
@@ -66,6 +67,82 @@ export class OpenAIChatService {
       }))
     ];
     return this.sendMessagesInternal(formattedMessages, responseFormat);
+  }
+
+  /**
+   * Sends a conversation with tool-calling support. Iteratively handles tool calls by
+   * invoking the provided toolExecutor and appending tool results to the message history.
+   */
+  async sendConversationWithTools(
+    systemPrompt: string,
+    messages: ConversationMessage[],
+    tools: ChatCompletionTool[] | undefined,
+    toolExecutor: ToolExecutor,
+    options: { maxToolIterations?: number; toolChoice?: "auto" | "none" } = {}
+  ): Promise<string> {
+    const { maxToolIterations = 5, toolChoice = "auto" } = options;
+
+    const openAIMessages: ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      ...messages.map(m => ({ role: m.role, content: m.content }))
+    ];
+
+    // Initial round-trip
+    let response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create({
+      model: this.model,
+      messages: openAIMessages,
+      tools,
+      tool_choice: toolChoice
+    });
+    this.notifyObservers(response);
+    if (this.langfuseWrapper) {
+      await this.langfuseWrapper.flushAsync();
+    }
+
+    let iterations = 0;
+    while (response.choices[0]?.message?.tool_calls && iterations < maxToolIterations) {
+      const toolCalls = response.choices[0].message.tool_calls;
+
+      // Record assistant message with tool calls
+      openAIMessages.push({
+        role: "assistant",
+        content: response.choices[0].message.content,
+        tool_calls: toolCalls
+      });
+
+      // Execute each function tool call
+      for (const toolCall of toolCalls) {
+        if (toolCall.type !== "function") continue;
+        const toolName = toolCall.function.name;
+        const toolArgs = JSON.parse(toolCall.function.arguments ?? "{}");
+        try {
+          const result = await toolExecutor(toolName, toolArgs);
+          openAIMessages.push({ role: "tool", tool_call_id: toolCall.id, content: JSON.stringify(result) });
+        } catch (err) {
+          openAIMessages.push({ role: "tool", tool_call_id: toolCall.id, content: JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }) });
+        }
+      }
+
+      // Next round-trip; may return more tool calls or final answer
+      response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create({
+        model: this.model,
+        messages: openAIMessages,
+        tools,
+        tool_choice: toolChoice
+      });
+      this.notifyObservers(response);
+      if (this.langfuseWrapper) {
+        await this.langfuseWrapper.flushAsync();
+      }
+
+      iterations++;
+    }
+
+    if (iterations >= maxToolIterations) {
+      console.warn(`Reached max tool iterations (${maxToolIterations})`);
+    }
+
+    return response.choices[0]?.message?.content ?? "";
   }
 
   private async sendMessagesInternal(messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[], responseFormat: { type: "json_object" | "text" } | undefined = undefined): Promise<string> {
