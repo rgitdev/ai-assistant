@@ -1,12 +1,12 @@
 // backend/services/assistant/tools/SearchMemoriesByCategoryTool.ts
 import { Tool } from '../ToolRegistry';
-import { IMemoryRepository } from '../../repository/memory/IMemoryRepository';
+import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
 import { MemoryCategory, MemoryRecord, parseMemoryCategory } from '@backend/models/Memory';
 
 export class SearchMemoriesByCategoryTool implements Tool {
   name = "search_memories_by_category";
-  description = "Search memories within a specific category. Categories: user_profile, conversation, task, preference, context, knowledge, relationship, goal, assistant_persona, other";
-  
+  description = "Search memories within a specific category using semantic search. Categories: user_profile, conversation, task, preference, context, knowledge, relationship, goal, assistant_persona, other";
+
   parameters = {
     type: "object",
     properties: {
@@ -17,7 +17,7 @@ export class SearchMemoriesByCategoryTool implements Tool {
       },
       query: {
         type: "string",
-        description: "Optional search query within the category"
+        description: "Search query within the category (required for semantic search)"
       },
       limit: {
         type: "number",
@@ -25,29 +25,23 @@ export class SearchMemoriesByCategoryTool implements Tool {
         default: 5
       }
     },
-    required: ["category"]
+    required: ["category", "query"]
   };
 
-  constructor(private memoryRepository: IMemoryRepository) {}
+  constructor(private memorySearchService: MemorySearchService) {}
 
-  async execute(args: { category: string; query?: string; limit?: number }): Promise<any> {
+  async execute(args: { category: string; query: string; limit?: number }): Promise<any> {
     const { category, query, limit = 5 } = args;
-    
+
     const memoryCategory = parseMemoryCategory(category);
-    
-    let memories;
-    if (query) {
-      // Search within category
-      const allMemories = await this.memoryRepository.findMemoriesByText(query, limit * 2);
-      memories = allMemories
-        .filter((m: MemoryRecord) => m.category === memoryCategory)
-        .slice(0, limit);
-    } else {
-      // Get all memories in category
-      memories = await this.memoryRepository.findMemoriesByCategory(memoryCategory);
-      memories = memories.slice(0, limit);
-    }
-    
+
+    // Use semantic search within category
+    const memories = await this.memorySearchService.searchMemoriesByCategory(
+      memoryCategory,
+      query,
+      { topK: limit }
+    );
+
     return {
       category: memoryCategory,
       count: memories.length,

@@ -1,10 +1,10 @@
 import { Tool } from '../ToolRegistry';
-import { IConversationRepository } from '@backend/repository/IConversationRepository';
+import { ConversationService } from '@backend/services/conversation/ConversationService';
 
 export class ListConversationsTool implements Tool {
   name = "list_conversations";
   description = "List all available conversations with their metadata";
-  
+
   parameters = {
     type: "object",
     properties: {
@@ -16,14 +16,14 @@ export class ListConversationsTool implements Tool {
     }
   };
 
-  constructor(private conversationRepository: IConversationRepository) {}
+  constructor(private conversationService: ConversationService) {}
 
   async execute(args: { limit?: number }): Promise<any> {
     const { limit = 10 } = args;
-    
-    const conversations = await this.conversationRepository.getConversations();
+
+    const conversations = await this.conversationService.getConversations();
     const limited = conversations.slice(0, limit);
-    
+
     return {
       total: conversations.length,
       returned: limited.length,

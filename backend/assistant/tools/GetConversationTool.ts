@@ -1,12 +1,12 @@
 
 // backend/services/assistant/tools/GetConversationTool.ts
 import { Tool } from '../ToolRegistry';
-import { IConversationRepository } from '@backend/repository/IConversationRepository';
+import { ConversationService } from '@backend/services/conversation/ConversationService';
 
 export class GetConversationTool implements Tool {
   name = "get_conversation";
   description = "Retrieve all messages from a specific conversation by ID";
-  
+
   parameters = {
     type: "object",
     properties: {
@@ -18,13 +18,13 @@ export class GetConversationTool implements Tool {
     required: ["conversationId"]
   };
 
-  constructor(private conversationRepository: IConversationRepository) {}
+  constructor(private conversationService: ConversationService) {}
 
   async execute(args: { conversationId: string }): Promise<any> {
     const { conversationId } = args;
-    
-    const messages = await this.conversationRepository.getConversationMessages(conversationId);
-    
+
+    const messages = await this.conversationService.getConversationMessages(conversationId);
+
     return {
       conversationId,
       messageCount: messages.length,
