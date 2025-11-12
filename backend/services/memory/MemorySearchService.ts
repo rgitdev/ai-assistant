@@ -16,13 +16,17 @@ export class MemorySearchService {
 
   constructor(
     vectorStore: VectorStore,
-    embeddingService?: OpenAIEmbeddingService
+    embeddingService?: OpenAIEmbeddingService,
+    memoryRepository?: IMemoryRepository
   ) {
+    // Allow dependency injection of memoryRepository for testing
+    if (memoryRepository) {
+      this.memoryRepository = memoryRepository;
+    } else {
+      const memoryRepoFactory = new MemoryRepositoryFactory();
+      this.memoryRepository = memoryRepoFactory.build();
+    }
 
-    const memoryRepoFactory = new MemoryRepositoryFactory();
-    this.memoryRepository = memoryRepoFactory.build();
-
-    
     this.vectorStore = vectorStore;
     this.embeddingService = embeddingService;
   }
