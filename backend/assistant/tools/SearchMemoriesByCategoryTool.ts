@@ -1,11 +1,24 @@
 // backend/services/assistant/tools/SearchMemoriesByCategoryTool.ts
 import { Tool } from '../ToolRegistry';
 import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
-import { MemoryCategory, MemoryRecord, parseMemoryCategory } from '@backend/models/Memory';
+import { MemoryCategory, MemoryRecord, parseMemoryCategory, MEMORY_CATEGORY_DESCRIPTIONS } from '@backend/models/Memory';
 
 export class SearchMemoriesByCategoryTool implements Tool {
   name = "search_memories_by_category";
-  description = "Search memories within a specific category using semantic search. Categories: user_profile, conversation, task, preference, context, knowledge, relationship, goal, assistant_persona, other";
+  description = `Search memories within a specific category using semantic search. Choose the most relevant category based on what you're looking for:
+
+- user_profile: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.USER_PROFILE]}
+- conversation: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.CONVERSATION]}
+- task: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.TASK]}
+- preference: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.PREFERENCE]}
+- context: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.CONTEXT]}
+- knowledge: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.KNOWLEDGE]}
+- relationship: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.RELATIONSHIP]}
+- goal: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.GOAL]}
+- assistant_persona: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.ASSISTANT_PERSONA]}
+- other: ${MEMORY_CATEGORY_DESCRIPTIONS[MemoryCategory.OTHER]}
+
+Note: Programming languages, technical skills, and similar traits are part of user_profile. User preferences like communication style or settings are in preference.`;
 
   parameters = {
     type: "object",
