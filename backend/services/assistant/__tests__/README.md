@@ -2,6 +2,14 @@
 
 This directory contains comprehensive tests for the `AssistantServiceWithTools` class with memory search tools integration.
 
+## Test Types
+
+### Unit Tests (`AssistantServiceWithTools.test.ts`)
+Fast, isolated tests that use fake embeddings and don't make external API calls.
+
+### Integration Tests (`AssistantServiceWithToolsIT.test.ts`)
+End-to-end tests that make REAL OpenAI API calls. Requires `OPENAI_API_KEY` and may incur costs.
+
 ## Test Setup
 
 The tests demonstrate proper dependency injection and integration between:
@@ -16,8 +24,10 @@ The tests demonstrate proper dependency injection and integration between:
 
 ## Running the Tests
 
+### Unit Tests (Fast, No API Calls)
+
 ```bash
-# Run all tests in this file
+# Run all unit tests
 bun test backend/services/assistant/__tests__/AssistantServiceWithTools.test.ts
 
 # Run with verbose output
@@ -27,11 +37,29 @@ bun test backend/services/assistant/__tests__/AssistantServiceWithTools.test.ts 
 bun test backend/services/assistant/__tests__/AssistantServiceWithTools.test.ts -t "SearchMemoriesTool"
 ```
 
+### Integration Tests (Requires OPENAI_API_KEY)
+
+```bash
+# Set your OpenAI API key
+export OPENAI_API_KEY="sk-..."
+
+# Run integration tests
+bun test backend/services/assistant/__tests__/AssistantServiceWithToolsIT.test.ts
+
+# Run all tests (unit + integration)
+bun test backend/services/assistant/__tests__/
+```
+
+**Note**: Integration tests make real API calls and may incur OpenAI costs (~$0.01-0.05 per test run).
+
 ## Test Files
 
-- **AssistantServiceWithTools.test.ts**: Main test file with comprehensive test suites
+- **AssistantServiceWithTools.test.ts**: Unit tests with fake embeddings (30+ tests)
+- **AssistantServiceWithToolsIT.test.ts**: Integration tests with real OpenAI API calls (5 tests)
 - **test-memories.json**: Static test data with 8 sample memories across different categories
-- **test-vectors.json**: Generated during test setup, cleaned up after tests complete
+- **test-vectors.json**: Generated during unit tests, cleaned up after completion
+- **test-vectors-it.json**: Generated during integration tests with real embeddings, cleaned up after completion
+- **README.md**: This documentation file
 
 ## Test Coverage
 
@@ -67,10 +95,17 @@ bun test backend/services/assistant/__tests__/AssistantServiceWithTools.test.ts 
 - Memory ID matching across different search methods
 - Data integrity across search variations
 
-### 7. AssistantServiceWithTools
+### 7. AssistantServiceWithTools (Unit Tests)
 - Service initialization with tools
 - Tool availability verification
-- (Note: Actual OpenAI API calls are not tested to avoid requiring API keys and making real API calls)
+
+### 8. Integration Tests (AssistantServiceWithToolsIT)
+- **Real OpenAI API Integration**: Actual calls to `sendConversationWithTools`
+- **Memory Search Tool Invocation**: Tests OpenAI automatically calling search_memories tool
+- **Category Search Tool Invocation**: Tests OpenAI calling search_memories_by_category tool
+- **Multi-Turn Conversations**: Validates context preservation across multiple messages
+- **Tool Enable/Disable**: Tests conversation with and without tools enabled
+- **Real Embedding Quality**: Validates semantic search with actual OpenAI embeddings
 
 ## Test Data
 
@@ -168,3 +203,104 @@ constructor(
 ```
 
 This change is backward compatible - existing code continues to work without changes.
+
+## Integration Tests Deep Dive
+
+### What Makes Them Different?
+
+Integration tests (`AssistantServiceWithToolsIT.test.ts`) differ from unit tests in these key ways:
+
+1. **Real API Calls**: Makes actual HTTP requests to OpenAI's API
+2. **Real Embeddings**: Uses OpenAI's embedding model instead of fake embeddings
+3. **Real Tool Calling**: Tests the complete OpenAI function calling flow
+4. **Slower Execution**: ~5-10 seconds per test vs milliseconds for unit tests
+5. **Requires API Key**: Must have valid `OPENAI_API_KEY` environment variable
+6. **Incurs Costs**: Each test run costs ~$0.01-0.05 in OpenAI API usage
+
+### Integration Test Scenarios
+
+#### 1. Memory Search with Natural Language
+Tests OpenAI's ability to understand a user query and automatically invoke the `search_memories` tool:
+
+```typescript
+const messages = [
+  {
+    role: "user",
+    content: "What do you know about my programming language preferences?"
+  }
+];
+
+const response = await assistantService.sendConversationWithTools(
+  systemPrompt,
+  messages
+);
+```
+
+**Expected behavior**: OpenAI recognizes the need to search memories, calls the tool, and incorporates the results into its response.
+
+#### 2. Category-Specific Search
+Tests the `search_memories_by_category` tool invocation:
+
+```typescript
+const messages = [
+  {
+    role: "user",
+    content: "Search my task-related memories for authentication."
+  }
+];
+```
+
+**Expected behavior**: OpenAI chooses the category-specific tool and correctly specifies the "task" category.
+
+#### 3. Multi-Turn Conversation
+Validates that conversation context is preserved across multiple exchanges:
+
+```typescript
+// First turn: Ask about goals
+// Second turn: Ask about TypeScript knowledge
+// Both should successfully use tools and maintain context
+```
+
+#### 4. Semantic Search Quality
+Compares real OpenAI embeddings vs fake embeddings for search accuracy:
+
+```typescript
+// Real embeddings should find semantically similar content
+// even when exact keywords don't match
+const result = await toolRegistry.executeTool("search_memories", {
+  query: "coding style and best practices"
+});
+```
+
+### Running Integration Tests Safely
+
+1. **Use a test API key** if possible to avoid mixing with production usage
+2. **Monitor costs** in your OpenAI dashboard
+3. **Run selectively** - don't run on every commit
+4. **Consider CI/CD** - only run in specific environments with secrets configured
+
+### Expected Output
+
+When running integration tests, you'll see detailed logging:
+
+```
+=== Starting Integration Test: Memory Search ===
+Sending conversation to OpenAI...
+Response received in 2341ms
+Assistant response: Based on my memory search, I can see that you prefer TypeScript...
+=== Integration Test Complete ===
+```
+
+### Troubleshooting
+
+**Error: "OPENAI_API_KEY environment variable is required"**
+- Solution: Set your API key: `export OPENAI_API_KEY="sk-..."`
+
+**Tests timing out**
+- Solution: Increase timeout in test configuration (default: 60 seconds)
+- Check your internet connection
+- Verify OpenAI API status
+
+**High costs**
+- Solution: Integration tests use minimal tokens but check your OpenAI pricing tier
+- Consider using a separate billing account for testing
