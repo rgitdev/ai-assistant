@@ -7,6 +7,7 @@ import { MemorySearchService } from "@backend/services/memory/MemorySearchServic
 import { MemoryFileRepository } from "@backend/repository/memory/MemoryFileRepository";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
+import { TestLogger } from "@backend/utils/TestLogger";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -36,6 +37,9 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
   let vectorStore: VectorStore;
   let embeddingService: OpenAIEmbeddingService;
 
+  // Test logger for clean output
+  const testLogger = new TestLogger('AssistantServiceWithToolsIT');
+
   // Test data paths
   const testMemoriesPath = path.join(__dirname, "test-memories.json");
   const testVectorsPath = path.join(__dirname, "test-vectors-it.json");
@@ -49,7 +53,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       );
     }
 
-    console.log("Setting up integration test environment...");
+    testLogger.setup("Setting up integration test environment...");
 
     // 1. Create MemoryFileRepository pointing to test data
     memoryRepository = new MemoryFileRepository(testMemoriesPath);
@@ -81,14 +85,14 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
     // 7. Create AssistantServiceWithTools
     assistantService = new AssistantServiceWithTools(toolRegistry);
 
-    console.log("Integration test environment setup complete");
+    testLogger.setup("Integration test environment setup complete");
   });
 
   afterAll(() => {
     // Cleanup: Remove test vector file
     if (fs.existsSync(testVectorsPath)) {
       fs.unlinkSync(testVectorsPath);
-      console.log("Cleaned up test vectors file");
+      testLogger.teardown("Cleaned up test vectors file");
     }
   });
 
@@ -97,7 +101,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
    * This is slower but provides accurate semantic search for integration testing
    */
   async function setupTestVectorsWithRealEmbeddings() {
-    console.log("Creating real embeddings for test memories...");
+    testLogger.setup("Creating real embeddings for test memories...");
     const memories = await memoryRepository.getAllMemories();
 
     for (const memory of memories) {
@@ -117,13 +121,14 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       });
     }
-    console.log(`Created embeddings for ${memories.length} memories`);
+    testLogger.setup(`Created embeddings for ${memories.length} memories`);
   }
 
   describe("OpenAI Conversation with Tools", () => {
     test("should invoke OpenAI and use search_memories tool when asked about user preferences", async () => {
-      // This test makes a REAL API call to OpenAI
-      console.log("\n=== Starting Integration Test: Memory Search ===");
+      const testName = "should invoke OpenAI and use search_memories tool when asked about user preferences";
+
+      testLogger.log(testName, "Starting integration test: Memory Search");
 
       const systemPrompt = "You are a helpful assistant with access to memory search tools. Use them when the user asks about stored information.";
 
@@ -134,7 +139,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       ];
 
-      console.log("Sending conversation to OpenAI...");
+      testLogger.log(testName, "Sending conversation to OpenAI...");
       const startTime = Date.now();
 
       const response = await assistantService.sendConversationWithTools(
@@ -147,8 +152,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       );
 
       const duration = Date.now() - startTime;
-      console.log(`Response received in ${duration}ms`);
-      console.log("Assistant response:", response);
+      testLogger.log(testName, `Response received in ${duration}ms`);
+      testLogger.log(testName, `Assistant response: ${response}`);
 
       // Assertions
       expect(response).toBeDefined();
@@ -159,11 +164,13 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       // This validates that the tool was actually called and the memory was retrieved
       expect(response.toLowerCase()).toMatch(/typescript|programming|language/);
 
-      console.log("=== Integration Test Complete ===\n");
+      testLogger.log(testName, "Integration test complete");
     }, 60000); // 60 second timeout for API call
 
     test("should invoke OpenAI and use search_memories_by_category tool for specific category queries", async () => {
-      console.log("\n=== Starting Integration Test: Category-Specific Search ===");
+      const testName = "should invoke OpenAI and use search_memories_by_category tool for specific category queries";
+
+      testLogger.log(testName, "Starting integration test: Category-Specific Search");
 
       const systemPrompt = "You are a helpful assistant with access to memory search tools. When asked about specific types of information, use the category search tool.";
 
@@ -174,7 +181,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       ];
 
-      console.log("Sending conversation to OpenAI...");
+      testLogger.log(testName, "Sending conversation to OpenAI...");
       const startTime = Date.now();
 
       const response = await assistantService.sendConversationWithTools(
@@ -187,8 +194,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       );
 
       const duration = Date.now() - startTime;
-      console.log(`Response received in ${duration}ms`);
-      console.log("Assistant response:", response);
+      testLogger.log(testName, `Response received in ${duration}ms`);
+      testLogger.log(testName, `Assistant response: ${response}`);
 
       // Assertions
       expect(response).toBeDefined();
@@ -198,11 +205,13 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       // The response should mention authentication and JWT since that's in the task memory
       expect(response.toLowerCase()).toMatch(/authentication|jwt|task/);
 
-      console.log("=== Integration Test Complete ===\n");
+      testLogger.log(testName, "Integration test complete");
     }, 60000); // 60 second timeout for API call
 
     test("should handle multi-turn conversation with tool usage", async () => {
-      console.log("\n=== Starting Integration Test: Multi-Turn Conversation ===");
+      const testName = "should handle multi-turn conversation with tool usage";
+
+      testLogger.log(testName, "Starting integration test: Multi-Turn Conversation");
 
       const systemPrompt = "You are a helpful assistant with access to memory search tools. Use them to answer questions about stored information.";
 
@@ -213,7 +222,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       ];
 
-      console.log("Sending first message to OpenAI...");
+      testLogger.log(testName, "Sending first message to OpenAI...");
       const response1 = await assistantService.sendConversationWithTools(
         systemPrompt,
         messages,
@@ -223,7 +232,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       );
 
-      console.log("First response:", response1);
+      testLogger.log(testName, `First response: ${response1}`);
       expect(response1).toBeDefined();
       expect(response1.toLowerCase()).toMatch(/system design|goal/);
 
@@ -233,7 +242,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         { role: "user" as const, content: "What knowledge do I have about TypeScript?" }
       );
 
-      console.log("Sending follow-up message to OpenAI...");
+      testLogger.log(testName, "Sending follow-up message to OpenAI...");
       const response2 = await assistantService.sendConversationWithTools(
         systemPrompt,
         messages,
@@ -243,15 +252,17 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       );
 
-      console.log("Second response:", response2);
+      testLogger.log(testName, `Second response: ${response2}`);
       expect(response2).toBeDefined();
       expect(response2.toLowerCase()).toMatch(/typescript|best practices|strict mode/);
 
-      console.log("=== Integration Test Complete ===\n");
+      testLogger.log(testName, "Integration test complete");
     }, 90000); // 90 second timeout for multiple API calls
 
     test("should work without tools when enableTools is false", async () => {
-      console.log("\n=== Starting Integration Test: No Tools ===");
+      const testName = "should work without tools when enableTools is false";
+
+      testLogger.log(testName, "Starting integration test: No Tools");
 
       const systemPrompt = "You are a helpful assistant.";
 
@@ -262,7 +273,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         }
       ];
 
-      console.log("Sending conversation to OpenAI without tools...");
+      testLogger.log(testName, "Sending conversation to OpenAI without tools...");
       const startTime = Date.now();
 
       const response = await assistantService.sendConversationWithTools(
@@ -275,8 +286,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       );
 
       const duration = Date.now() - startTime;
-      console.log(`Response received in ${duration}ms`);
-      console.log("Assistant response:", response);
+      testLogger.log(testName, `Response received in ${duration}ms`);
+      testLogger.log(testName, `Assistant response: ${response}`);
 
       // Assertions
       expect(response).toBeDefined();
@@ -286,7 +297,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       // Should answer the math question directly
       expect(response).toMatch(/4|four/i);
 
-      console.log("=== Integration Test Complete ===\n");
+      testLogger.log(testName, "Integration test complete");
     }, 60000); // 60 second timeout for API call
   });
 
@@ -302,7 +313,9 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
 
   describe("Real Embedding Quality", () => {
     test("should retrieve semantically similar memories using real embeddings", async () => {
-      console.log("\n=== Testing Real Embedding Quality ===");
+      const testName = "should retrieve semantically similar memories using real embeddings";
+
+      testLogger.log(testName, "Testing real embedding quality");
 
       // Search for "coding preferences" which should match the assistant persona memory
       const result = await toolRegistry.executeTool("search_memories", {
@@ -310,7 +323,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
         limit: 3
       });
 
-      console.log("Semantic search results:", result);
+      testLogger.log(testName, `Semantic search results: ${JSON.stringify(result)}`);
 
       expect(result.count).toBeGreaterThan(0);
       expect(result.memories).toBeInstanceOf(Array);
@@ -324,7 +337,7 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
 
       expect(relevantMemory).toBe(true);
 
-      console.log("=== Embedding Quality Test Complete ===\n");
+      testLogger.log(testName, "Embedding quality test complete");
     });
   });
 });
