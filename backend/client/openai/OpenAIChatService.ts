@@ -80,20 +80,27 @@ export class OpenAIChatService {
     toolExecutor: ToolExecutor,
     options: { maxToolIterations?: number; toolChoice?: "auto" | "none" } = {}
   ): Promise<string> {
-    const { maxToolIterations = 5, toolChoice = "auto" } = options;
+    const { maxToolIterations = 5, toolChoice } = options;
 
     const openAIMessages: ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       ...messages.map(m => ({ role: m.role, content: m.content }))
     ];
 
-    // Initial round-trip
-    let response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create({
+    // Prepare API params - only include tool_choice when tools are provided
+    const apiParams: any = {
       model: this.model,
       messages: openAIMessages,
-      tools,
-      tool_choice: toolChoice
-    });
+    };
+    if (tools) {
+      apiParams.tools = tools;
+      if (toolChoice) {
+        apiParams.tool_choice = toolChoice;
+      }
+    }
+
+    // Initial round-trip
+    let response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create(apiParams);
     this.notifyObservers(response);
     if (this.langfuseWrapper) {
       await this.langfuseWrapper.flushAsync();
@@ -124,12 +131,18 @@ export class OpenAIChatService {
       }
 
       // Next round-trip; may return more tool calls or final answer
-      response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create({
+      // Reuse the same apiParams structure
+      const followUpParams: any = {
         model: this.model,
         messages: openAIMessages,
-        tools,
-        tool_choice: toolChoice
-      });
+      };
+      if (tools) {
+        followUpParams.tools = tools;
+        if (toolChoice) {
+          followUpParams.tool_choice = toolChoice;
+        }
+      }
+      response = await (this.langfuseWrapper ? this.langfuseWrapper : this.client).chat.completions.create(followUpParams);
       this.notifyObservers(response);
       if (this.langfuseWrapper) {
         await this.langfuseWrapper.flushAsync();

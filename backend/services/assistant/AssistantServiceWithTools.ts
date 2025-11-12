@@ -35,12 +35,17 @@ export class AssistantServiceWithTools {
     const { maxToolIterations = 5, enableTools = true } = options;
     const tools = enableTools ? this.toolRegistry.getOpenAIToolDefinitions() : undefined;
 
+    // Only include toolChoice when tools are enabled (OpenAI doesn't allow tool_choice without tools)
+    const toolOptions = enableTools
+      ? { maxToolIterations, toolChoice: "auto" as const }
+      : { maxToolIterations };
+
     return this.openAIService.sendConversationWithTools(
       systemPrompt,
       messages,
       tools,
       (name, args) => this.toolRegistry.executeTool(name, args),
-      { maxToolIterations, toolChoice: enableTools ? "auto" : "none" }
+      toolOptions
     );
   }
 
