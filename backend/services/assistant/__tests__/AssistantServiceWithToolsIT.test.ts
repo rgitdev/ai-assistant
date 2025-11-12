@@ -125,8 +125,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
   }
 
   describe("OpenAI Conversation with Tools", () => {
-    test("should invoke OpenAI and use search_memories tool when asked about user preferences", async () => {
-      const testName = "should invoke OpenAI and use search_memories tool when asked about user preferences";
+    test("01 - should invoke OpenAI and use search_memories tool when asked about user preferences", async () => {
+      const testName = "01";
 
       testLogger.log(testName, "Starting integration test: Memory Search");
 
@@ -167,8 +167,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       testLogger.log(testName, "Integration test complete");
     }, 60000); // 60 second timeout for API call
 
-    test("should invoke OpenAI and use search_memories_by_category tool for specific category queries", async () => {
-      const testName = "should invoke OpenAI and use search_memories_by_category tool for specific category queries";
+    test("02 - should invoke OpenAI and use search_memories_by_category tool for specific category queries", async () => {
+      const testName = "02";
 
       testLogger.log(testName, "Starting integration test: Category-Specific Search");
 
@@ -208,8 +208,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       testLogger.log(testName, "Integration test complete");
     }, 60000); // 60 second timeout for API call
 
-    test("should handle multi-turn conversation with tool usage", async () => {
-      const testName = "should handle multi-turn conversation with tool usage";
+    test("03 - should handle multi-turn conversation with tool usage", async () => {
+      const testName = "03";
 
       testLogger.log(testName, "Starting integration test: Multi-Turn Conversation");
 
@@ -259,8 +259,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
       testLogger.log(testName, "Integration test complete");
     }, 90000); // 90 second timeout for multiple API calls
 
-    test("should work without tools when enableTools is false", async () => {
-      const testName = "should work without tools when enableTools is false";
+    test("04 - should work without tools when enableTools is false", async () => {
+      const testName = "04";
 
       testLogger.log(testName, "Starting integration test: No Tools");
 
@@ -312,8 +312,8 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
   });
 
   describe("Real Embedding Quality", () => {
-    test("should retrieve semantically similar memories using real embeddings", async () => {
-      const testName = "should retrieve semantically similar memories using real embeddings";
+    test("05 - should retrieve semantically similar memories using real embeddings", async () => {
+      const testName = "05";
 
       testLogger.log(testName, "Testing real embedding quality");
 
