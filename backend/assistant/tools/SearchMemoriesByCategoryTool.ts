@@ -49,6 +49,7 @@ export class SearchMemoriesByCategoryTool implements Tool {
         id: m.id,
         title: m.title,
         content: m.content,
+        category: m.category,
         importance: m.importance,
         createdAt: m.createdAt
       }))
