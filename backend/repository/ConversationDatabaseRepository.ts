@@ -77,4 +77,17 @@ export class ConversationDatabaseRepository implements IConversationRepository {
       await this.db.deleteMessage(msg.uuid);
     }
   }
+
+  async deleteMessagesFrom(conversationId: string, messageId: string): Promise<void> {
+    const all = await this.db.getMessagesByConversationId(conversationId);
+    const sorted = all.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    const index = sorted.findIndex(m => m.uuid === messageId);
+    if (index === -1) {
+      throw new Error('Message not found');
+    }
+    const toDelete = sorted.slice(index);
+    for (const msg of toDelete) {
+      await this.db.deleteMessage(msg.uuid);
+    }
+  }
 }

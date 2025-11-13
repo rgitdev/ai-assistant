@@ -202,37 +202,6 @@ export class Assistant {
   }
 
   /**
-   * Edit the last user message in a conversation and regenerate the assistant's response
-   * This will:
-   * 1. Update the last user message and remove all following messages (via ConversationService)
-   * 2. Generate a new assistant response
-   *
-   * @param conversationId - The conversation ID
-   * @param messageId - The ID of the last user message to edit
-   * @param newContent - The new content for the message
-   * @returns Object containing the new assistant response and conversationId
-   */
-  async editLastUserMessageAndRegenerate(
-    conversationId: string,
-    messageId: string,
-    newContent: string
-  ): Promise<{ response: string; conversationId: string }> {
-    assistantLogger.logMessageEdit(conversationId, messageId);
-
-    // Step 1: Update last user message and remove following messages
-    await this.conversationService.updateLastUserMessageAndRemoveFollowing(
-      conversationId,
-      messageId,
-      newContent
-    );
-
-    // Step 2: Generate and add new assistant response
-    const response = await this.generateAndAddResponse(conversationId);
-
-    return { response, conversationId };
-  }
-
-  /**
    * Create a memory for a conversation.
    * Passes executor function to MemoryCreator for LLM interaction.
    *
