@@ -1,5 +1,4 @@
 import { IMemoryRepository, MemoryCreateInput } from "backend/repository/memory/IMemoryRepository";
-import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryRecord } from "backend/models/Memory";
 import { CreateMemoryCommand } from "./commands/CreateMemoryCommand";
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
@@ -30,15 +29,8 @@ export class MemoryCreator {
   private readonly memoryRepository: IMemoryRepository;
   private readonly overwrite: boolean;
 
-  constructor(memoryRepository?: IMemoryRepository) {
-    // Allow dependency injection for testing, create default if not provided
-    if (memoryRepository) {
-      this.memoryRepository = memoryRepository;
-    } else {
-      const memoryRepoFactory = new MemoryRepositoryFactory();
-      this.memoryRepository = memoryRepoFactory.build();
-    }
-
+  constructor(memoryRepository: IMemoryRepository) {
+    this.memoryRepository = memoryRepository;
     this.overwrite = false;
   }
 

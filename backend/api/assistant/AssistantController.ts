@@ -2,13 +2,14 @@ import { SampleHandler } from "./samples/SampleHandler";
 import { Assistant } from "backend/assistant/Assistant";
 import { ChatMessage, ChatRequest, ChatResponse, ChatEditRequest } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
+import { ServiceContainer } from "@backend/di/ServiceContainer";
 
 export class AssistantController {
   private useSimulatedResponses: boolean = false; // Set to true to use simulated responses
   private assistant: Assistant;
-  
+
   constructor() {
-    this.assistant = new Assistant();
+    this.assistant = ServiceContainer.get<Assistant>('Assistant');
   }
   
   // POST /api/assistant/chat - Send a message and get AI response

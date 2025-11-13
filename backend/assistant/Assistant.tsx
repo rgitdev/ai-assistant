@@ -1,19 +1,12 @@
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
-import { ConversationRepositoryFactory } from "backend/repository/ConversationRepositoryFactory";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
 import { AssistantService } from "@backend/services/assistant/AssistantService";
 import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilder";
 import { AssistantMemories } from "@backend/assistant/AssistantMemories";
-import { MemoryCreator } from "@backend/services/memory/MemoryCreator";
-import { MemoryProvider } from "@backend/services/memory/MemoryProvider";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
-import { VectorStore } from "@backend/client/vector/VectorStore";
-import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
 import { ConversationService } from "@backend/services/conversation/ConversationService";
 import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
-import { QueryService } from "@backend/services/query/QueryService";
-import { MemoryQueryResolver } from "@backend/services/memory/MemoryQueryResolver";
 import { assistantLogger } from "@backend/assistant/AssistantLogger";
 
 export class Assistant {
@@ -24,54 +17,15 @@ export class Assistant {
   memorySearchService: MemorySearchService;
 
   constructor(
-    assistantService?: AssistantService,
-    conversationService?: ConversationService,
-    assistantMemories?: AssistantMemories,
-    memorySearchService?: MemorySearchService
+    assistantService: AssistantService,
+    conversationService: ConversationService,
+    assistantMemories: AssistantMemories,
+    memorySearchService: MemorySearchService
   ) {
-    // Allow dependency injection for testing and DI container
-    if (assistantService && conversationService && assistantMemories && memorySearchService) {
-      this.assistantService = assistantService;
-      this.conversationService = conversationService;
-      this.assistantMemories = assistantMemories;
-      this.memorySearchService = memorySearchService;
-    } else {
-      // Fallback to creating dependencies (for backward compatibility and testing)
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error("OPENAI_API_KEY environment variable is not set");
-      }
-
-      const assistantSvc = new AssistantService();
-      this.assistantService = assistantSvc;
-
-      // Setup conversation service with repository
-      const repositoryFactory = new ConversationRepositoryFactory();
-      const conversationRepository = repositoryFactory.build();
-      this.conversationService = new ConversationService(conversationRepository);
-
-      // Memory-related services
-      const memoryCreator = new MemoryCreator();
-      const memoryProvider = new MemoryProvider();
-
-      const vectorStore = new VectorStore();
-      const embeddingService = new OpenAIEmbeddingService();
-      this.memorySearchService = new MemorySearchService(vectorStore, embeddingService);
-
-      // Query generation and memory resolution
-      const queryService = new QueryService();
-      const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
-
-      // Orchestration: AssistantMemories manages memory operations
-      this.assistantMemories = new AssistantMemories(
-        this.conversationService,
-        memoryCreator,
-        memoryProvider,
-        queryService,
-        memoryQueryResolver,
-        assistantSvc
-      );
-    }
+    this.assistantService = assistantService;
+    this.conversationService = conversationService;
+    this.assistantMemories = assistantMemories;
+    this.memorySearchService = memorySearchService;
   }
 
 
@@ -180,7 +134,13 @@ export class Assistant {
 }
 
 if (require.main === module) {
-  const assistant = new Assistant();
+  // Use DI container when running as main module
+  const { registerAllServices } = require("@backend/registerServices");
+  const { ServiceContainer } = require("@backend/di/ServiceContainer");
+
+  registerAllServices();
+  const assistant = ServiceContainer.get('Assistant');
+
   assistant.handleNewMessage("Hello, how are you? what's your name?").then(result => {
     console.log("Response:", result.response);
     console.log("Conversation ID:", result.conversationId);

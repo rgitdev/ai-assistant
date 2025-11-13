@@ -1,5 +1,4 @@
 import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
-import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
 import { AssistantPromptBuilder } from "backend/assistant/AssistantPromptBuilder";
 
 /**
@@ -10,18 +9,8 @@ export class AssistantService {
 
   private readonly openAIService: OpenAIService;
 
-  constructor(openAIService?: OpenAIService) {
-    // Allow dependency injection for testing, create default if not provided
-    if (openAIService) {
-      this.openAIService = openAIService;
-    } else {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error("OPENAI_API_KEY environment variable is not set");
-      }
-      const openAIFactory = new OpenAIServiceFactory();
-      this.openAIService = openAIFactory.build();
-    }
+  constructor(openAIService: OpenAIService) {
+    this.openAIService = openAIService;
   }
 
 
@@ -68,7 +57,13 @@ export class AssistantService {
 }
 
 if (require.main === module) {
-  const assistant = new AssistantService();
+  // Use DI container when running as main module
+  const { registerAllServices } = require("@backend/registerServices");
+  const { ServiceContainer } = require("@backend/di/ServiceContainer");
+
+  registerAllServices();
+  const assistant = ServiceContainer.get('AssistantService');
+
   const promptBuilder = new AssistantPromptBuilder();
   const systemPrompt = promptBuilder.buildSystemPrompt();
   assistant.sendMessage(systemPrompt, "Hello, how are you? what's your name?").then(console.log);

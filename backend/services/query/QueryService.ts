@@ -1,5 +1,4 @@
 import { ConversationMessage, OpenAIService } from "@backend/client/openai/OpenAIService";
-import { OpenAIServiceFactory } from "@backend/client/openai/OpenAIServiceFactory";
 import { ChatMessage } from "@backend/models/ChatMessage";
 import { queryExtractionSystemPrompt } from "./prompts/queryExtractionSystemPrompt";
 
@@ -24,14 +23,8 @@ export interface Query {
 export class QueryService {
   private readonly openAIService: OpenAIService;
 
-  constructor(openAIService?: OpenAIService) {
-    // Allow dependency injection for testing, create default if not provided
-    if (openAIService) {
-      this.openAIService = openAIService;
-    } else {
-      const openAIFactory = new OpenAIServiceFactory();
-      this.openAIService = openAIFactory.build();
-    }
+  constructor(openAIService: OpenAIService) {
+    this.openAIService = openAIService;
   }
 
   /**

@@ -1,5 +1,4 @@
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
-import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryFormatter } from "./fragments/MemoryFormatter";
 import { LastConversationFragment } from "./fragments/LastConversationFragment";
 import { LastUserProfileFragment } from "./fragments/LastUserProfileFragment";
@@ -98,14 +97,8 @@ export class MemoryProviderBuilder {
 export class MemoryProvider {
   private readonly memoryRepository: IMemoryRepository;
 
-  constructor(memoryRepository?: IMemoryRepository) {
-    // Allow dependency injection for testing, create default if not provided
-    if (memoryRepository) {
-      this.memoryRepository = memoryRepository;
-    } else {
-      const memoryRepoFactory = new MemoryRepositoryFactory();
-      this.memoryRepository = memoryRepoFactory.build();
-    }
+  constructor(memoryRepository: IMemoryRepository) {
+    this.memoryRepository = memoryRepository;
   }
 
   /**
