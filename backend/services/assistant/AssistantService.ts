@@ -55,16 +55,3 @@ export class AssistantService {
   }
 
 }
-
-if (require.main === module) {
-  // Use DI container when running as main module
-  const { registerAllServices } = require("@backend/registerServices");
-  const { ServiceContainer } = require("@backend/di/ServiceContainer");
-
-  registerAllServices();
-  const assistant = ServiceContainer.get('AssistantService');
-
-  const promptBuilder = new AssistantPromptBuilder();
-  const systemPrompt = promptBuilder.buildSystemPrompt();
-  assistant.sendMessage(systemPrompt, "Hello, how are you? what's your name?").then(console.log);
-}

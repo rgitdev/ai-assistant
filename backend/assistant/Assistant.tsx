@@ -132,17 +132,3 @@ export class Assistant {
     return await this.assistantMemories.createMemoryForConversation(conversationId, category);
   }
 }
-
-if (require.main === module) {
-  // Use DI container when running as main module
-  const { registerAllServices } = require("@backend/registerServices");
-  const { ServiceContainer } = require("@backend/di/ServiceContainer");
-
-  registerAllServices();
-  const assistant = ServiceContainer.get('Assistant');
-
-  assistant.handleNewMessage("Hello, how are you? what's your name?").then(result => {
-    console.log("Response:", result.response);
-    console.log("Conversation ID:", result.conversationId);
-  });
-}
