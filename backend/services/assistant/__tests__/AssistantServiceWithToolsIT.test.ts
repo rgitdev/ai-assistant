@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { AssistantServiceWithTools } from "../AssistantServiceWithTools";
-import { ToolRegistry } from "@backend/assistant/ToolRegistry";
-import { SearchMemoriesTool } from "@backend/assistant/tools/SearchMemoriesTool";
-import { SearchMemoriesByCategoryTool } from "@backend/assistant/tools/SearchMemoriesByCategoryTool";
+import { ToolRegistry } from "../ToolRegistry";
+import { SearchMemoriesTool } from "../tools/SearchMemoriesTool";
+import { SearchMemoriesByCategoryTool } from "../tools/SearchMemoriesByCategoryTool";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { MemoryFileRepository } from "@backend/repository/memory/MemoryFileRepository";
 import { VectorStore } from "@backend/client/vector/VectorStore";

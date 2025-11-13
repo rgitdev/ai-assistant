@@ -3,7 +3,7 @@
 
 import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
-import { ToolRegistry } from "@backend/assistant/ToolRegistry";
+import { ToolRegistry } from "./ToolRegistry";
 
 export class AssistantServiceWithTools {
   private readonly openAIService: OpenAIService;

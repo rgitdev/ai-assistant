@@ -12,8 +12,8 @@ import { IMemoryRepository } from '@backend/repository/memory/IMemoryRepository'
 import { VectorStore } from '@backend/client/vector/VectorStore';
 import { OpenAIEmbeddingService } from '@backend/client/openai/OpenAIEmbeddingService';
 import { OpenAIService } from '@backend/client/openai/OpenAIService';
-import { ToolRegistry } from '@backend/assistant/ToolRegistry';
-import { WeatherForecastTool } from '@backend/assistant/tools/weather/WeatherForecastTool';
+import { ToolRegistry } from '@backend/services/assistant/ToolRegistry';
+import { WeatherForecastTool } from '@backend/services/assistant/tools/weather/WeatherForecastTool';
 
 /**
  * Register all business service layer components.

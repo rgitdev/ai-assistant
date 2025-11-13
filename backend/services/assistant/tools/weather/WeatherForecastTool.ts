@@ -1,4 +1,4 @@
-// backend/assistant/tools/weather/WeatherForecastTool.ts
+// backend/services/assistant/tools/weather/WeatherForecastTool.ts
 import { Tool } from '../../ToolRegistry';
 
 /**
