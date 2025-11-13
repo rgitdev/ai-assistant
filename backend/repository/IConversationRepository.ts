@@ -8,4 +8,5 @@ export interface IConversationRepository {
   updateConversationName(conversationId: string, name: string): Promise<void>;
   updateMessage(messageId: string, content: string): Promise<void>;
   deleteMessagesAfter(conversationId: string, messageId: string): Promise<void>;
+  deleteMessagesFrom(conversationId: string, messageId: string): Promise<void>;
 }

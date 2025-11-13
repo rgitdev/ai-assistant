@@ -66,20 +66,17 @@ export class AssistantController {
       throw new Error('conversationId is required and must be a string');
     }
 
-    const { response, conversationId } = await this.assistant.editLastUserMessageAndRegenerate(
+    // Truncate conversation: remove the message being edited and all following messages
+    await this.assistant.conversationService.truncateConversation(
       requestBody.conversationId,
-      messageId,
-      requestBody.message
+      messageId
     );
 
-    const aiResponse: ChatResponse = {
-      id: uuidv4(),
-      content: response,
-      role: 'assistant',
-      timestamp: new Date().toISOString(),
-      conversationId
-    };
-    return aiResponse;
+    // Handle the edited message through normal flow
+    return await this.handleChat({
+      message: requestBody.message,
+      conversationId: requestBody.conversationId
+    });
   }
 
 }
