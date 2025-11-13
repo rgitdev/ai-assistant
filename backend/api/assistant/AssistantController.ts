@@ -81,6 +81,3 @@ export class AssistantController {
   }
 
 }
-
-// Export singleton instance
-export const assistantController = new AssistantController();
