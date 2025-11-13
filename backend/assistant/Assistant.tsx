@@ -110,18 +110,13 @@ export class Assistant {
    * @returns The assistant's response text
    */
   private async generateResponse(conversationId: string): Promise<string> {
-    // Get full conversation history and send to OpenAI
+    // Get full conversation history
     const conversationMessages = await this.conversationService.getConversationMessages(conversationId);
-    const openAIMessages: ConversationMessage[] = conversationMessages.map(msg => ({
+    const messages: ConversationMessage[] = conversationMessages.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
 
-    const response = await this.sendConversation(openAIMessages);
-    return response;
-  }
-
-  private async sendConversation(messages: ConversationMessage[]): Promise<string> {
     console.log("Sending conversation to assistant:", messages.length, "messages");
 
     // Build prompt using AssistantPromptBuilder with component system
