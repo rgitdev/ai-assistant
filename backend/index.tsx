@@ -1,5 +1,5 @@
 import { serve } from "bun";
-import { assistantController } from "./api/assistant/AssistantController";
+import { AssistantController } from "./api/assistant/AssistantController";
 import { conversationController } from "./api/conversation/ConversationController";
 import { ChatEditRequest, ChatRequest } from "./models/ChatMessage";
 import { SchedulerInitializer } from "./services/scheduler/SchedulerInitializer";
@@ -9,6 +9,9 @@ import { registerAllServices } from "./registerServices";
 console.log('Initializing DI container...');
 registerAllServices();
 console.log('DI container initialized');
+
+// Create controller instances AFTER service registration
+const assistantController = new AssistantController();
 
 // CORS headers
 const corsHeaders = {
