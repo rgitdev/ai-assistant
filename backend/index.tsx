@@ -3,6 +3,12 @@ import { assistantController } from "./api/assistant/AssistantController";
 import { conversationController } from "./api/conversation/ConversationController";
 import { ChatEditRequest, ChatRequest } from "./models/ChatMessage";
 import { SchedulerInitializer } from "./services/scheduler/SchedulerInitializer";
+import { registerAllServices } from "./registerServices";
+
+// Initialize DI container at startup
+console.log('Initializing DI container...');
+registerAllServices();
+console.log('DI container initialized');
 
 // CORS headers
 const corsHeaders = {

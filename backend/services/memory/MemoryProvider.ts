@@ -1,5 +1,4 @@
 import { IMemoryRepository } from "backend/repository/memory/IMemoryRepository";
-import { MemoryRepositoryFactory } from "backend/repository/memory/MemoryRepositoryFactory";
 import { MemoryFormatter } from "./fragments/MemoryFormatter";
 import { LastConversationFragment } from "./fragments/LastConversationFragment";
 import { LastUserProfileFragment } from "./fragments/LastUserProfileFragment";
@@ -29,9 +28,8 @@ export class MemoryProviderBuilder {
   private fragments: MemoryFragment[] = [];
   private memoryRepository: IMemoryRepository;
 
-  constructor() {
-    const memoryRepoFactory = new MemoryRepositoryFactory();
-    this.memoryRepository = memoryRepoFactory.build();
+  constructor(memoryRepository: IMemoryRepository) {
+    this.memoryRepository = memoryRepository;
   }
 
   /**
@@ -99,16 +97,15 @@ export class MemoryProviderBuilder {
 export class MemoryProvider {
   private readonly memoryRepository: IMemoryRepository;
 
-  constructor() {
-    const memoryRepoFactory = new MemoryRepositoryFactory();
-    this.memoryRepository = memoryRepoFactory.build();
+  constructor(memoryRepository: IMemoryRepository) {
+    this.memoryRepository = memoryRepository;
   }
 
   /**
    * Create a new builder for flexible memory composition.
    */
   builder(): MemoryProviderBuilder {
-    return new MemoryProviderBuilder();
+    return new MemoryProviderBuilder(this.memoryRepository);
   }
 
   /**
