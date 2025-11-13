@@ -64,7 +64,7 @@ export class ConversationService {
    *
    * @param conversationId - The conversation ID
    * @param fromMessageId - Remove this message and all following messages
-   * @throws Error if conversation or message not found
+   * @throws Error if conversation or message not found, or if message is not the last user message
    */
   async truncateConversation(
     conversationId: string,
@@ -79,6 +79,12 @@ export class ConversationService {
     const messageExists = messages.some(m => m.id === fromMessageId);
     if (!messageExists) {
       throw new Error('Message not found in conversation');
+    }
+
+    // Safety check: ensure the message is the last user message to prevent accidental deletion
+    const lastUserMessage = messages.findLast(m => m.role === 'user');
+    if (!lastUserMessage || lastUserMessage.id !== fromMessageId) {
+      throw new Error('Can only truncate from the last user message');
     }
 
     // Delete the message and all following messages
