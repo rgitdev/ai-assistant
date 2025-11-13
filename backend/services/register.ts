@@ -7,8 +7,10 @@ import { MemorySearchService } from '@backend/services/memory/MemorySearchServic
 import { QueryService } from '@backend/services/query/QueryService';
 import { MemoryQueryResolver } from '@backend/services/memory/MemoryQueryResolver';
 import { IConversationRepository } from '@backend/repository/IConversationRepository';
+import { IMemoryRepository } from '@backend/repository/memory/IMemoryRepository';
 import { VectorStore } from '@backend/client/vector/VectorStore';
 import { OpenAIEmbeddingService } from '@backend/client/openai/OpenAIEmbeddingService';
+import { OpenAIService } from '@backend/client/openai/OpenAIService';
 
 /**
  * Register all business service layer components.
@@ -27,13 +29,22 @@ export function registerServices() {
   });
 
   // OpenAI communication service
-  ServiceContainer.register('AssistantService', () => new AssistantService());
+  ServiceContainer.register('AssistantService', () => {
+    const openAIService = ServiceContainer.get<OpenAIService>('OpenAIService');
+    return new AssistantService(openAIService);
+  });
 
   // Memory creation service
-  ServiceContainer.register('MemoryCreator', () => new MemoryCreator());
+  ServiceContainer.register('MemoryCreator', () => {
+    const memoryRepository = ServiceContainer.get<IMemoryRepository>('MemoryRepository');
+    return new MemoryCreator(memoryRepository);
+  });
 
   // Memory retrieval and formatting service
-  ServiceContainer.register('MemoryProvider', () => new MemoryProvider());
+  ServiceContainer.register('MemoryProvider', () => {
+    const memoryRepository = ServiceContainer.get<IMemoryRepository>('MemoryRepository');
+    return new MemoryProvider(memoryRepository);
+  });
 
   // Memory search service (with vector similarity)
   ServiceContainer.register('MemorySearchService', () => {
@@ -43,7 +54,10 @@ export function registerServices() {
   });
 
   // Query extraction service
-  ServiceContainer.register('QueryService', () => new QueryService());
+  ServiceContainer.register('QueryService', () => {
+    const openAIService = ServiceContainer.get<OpenAIService>('OpenAIService');
+    return new QueryService(openAIService);
+  });
 
   // Memory query resolution service
   ServiceContainer.register('MemoryQueryResolver', () => {

@@ -24,9 +24,14 @@ export interface Query {
 export class QueryService {
   private readonly openAIService: OpenAIService;
 
-  constructor() {
-    const openAIFactory = new OpenAIServiceFactory();
-    this.openAIService = openAIFactory.build();
+  constructor(openAIService?: OpenAIService) {
+    // Allow dependency injection for testing, create default if not provided
+    if (openAIService) {
+      this.openAIService = openAIService;
+    } else {
+      const openAIFactory = new OpenAIServiceFactory();
+      this.openAIService = openAIFactory.build();
+    }
   }
 
   /**

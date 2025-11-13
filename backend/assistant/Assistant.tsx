@@ -23,41 +23,55 @@ export class Assistant {
   assistantMemories: AssistantMemories;
   memorySearchService: MemorySearchService;
 
-  constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENAI_API_KEY environment variable is not set");
+  constructor(
+    assistantService?: AssistantService,
+    conversationService?: ConversationService,
+    assistantMemories?: AssistantMemories,
+    memorySearchService?: MemorySearchService
+  ) {
+    // Allow dependency injection for testing and DI container
+    if (assistantService && conversationService && assistantMemories && memorySearchService) {
+      this.assistantService = assistantService;
+      this.conversationService = conversationService;
+      this.assistantMemories = assistantMemories;
+      this.memorySearchService = memorySearchService;
+    } else {
+      // Fallback to creating dependencies (for backward compatibility and testing)
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("OPENAI_API_KEY environment variable is not set");
+      }
+
+      const assistantSvc = new AssistantService();
+      this.assistantService = assistantSvc;
+
+      // Setup conversation service with repository
+      const repositoryFactory = new ConversationRepositoryFactory();
+      const conversationRepository = repositoryFactory.build();
+      this.conversationService = new ConversationService(conversationRepository);
+
+      // Memory-related services
+      const memoryCreator = new MemoryCreator();
+      const memoryProvider = new MemoryProvider();
+
+      const vectorStore = new VectorStore();
+      const embeddingService = new OpenAIEmbeddingService();
+      this.memorySearchService = new MemorySearchService(vectorStore, embeddingService);
+
+      // Query generation and memory resolution
+      const queryService = new QueryService();
+      const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
+
+      // Orchestration: AssistantMemories manages memory operations
+      this.assistantMemories = new AssistantMemories(
+        this.conversationService,
+        memoryCreator,
+        memoryProvider,
+        queryService,
+        memoryQueryResolver,
+        assistantSvc
+      );
     }
-
-    const assistantService = new AssistantService();
-    this.assistantService = assistantService;
-
-    // Setup conversation service with repository
-    const repositoryFactory = new ConversationRepositoryFactory();
-    const conversationRepository = repositoryFactory.build();
-    this.conversationService = new ConversationService(conversationRepository);
-
-    // Memory-related services
-    const memoryCreator = new MemoryCreator();
-    const memoryProvider = new MemoryProvider();
-
-    const vectorStore = new VectorStore();
-    const embeddingService = new OpenAIEmbeddingService();
-    this.memorySearchService = new MemorySearchService(vectorStore, embeddingService);
-
-    // Query generation and memory resolution
-    const queryService = new QueryService();
-    const memoryQueryResolver = new MemoryQueryResolver(vectorStore, embeddingService);
-
-    // Orchestration: AssistantMemories manages memory operations
-    this.assistantMemories = new AssistantMemories(
-      this.conversationService,
-      memoryCreator,
-      memoryProvider,
-      queryService,
-      memoryQueryResolver,
-      assistantService
-    );
   }
 
 

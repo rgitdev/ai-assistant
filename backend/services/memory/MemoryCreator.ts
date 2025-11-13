@@ -30,9 +30,14 @@ export class MemoryCreator {
   private readonly memoryRepository: IMemoryRepository;
   private readonly overwrite: boolean;
 
-  constructor() {
-    const memoryRepoFactory = new MemoryRepositoryFactory();
-    this.memoryRepository = memoryRepoFactory.build();
+  constructor(memoryRepository?: IMemoryRepository) {
+    // Allow dependency injection for testing, create default if not provided
+    if (memoryRepository) {
+      this.memoryRepository = memoryRepository;
+    } else {
+      const memoryRepoFactory = new MemoryRepositoryFactory();
+      this.memoryRepository = memoryRepoFactory.build();
+    }
 
     this.overwrite = false;
   }

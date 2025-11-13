@@ -41,6 +41,16 @@ export function registerAssistant() {
 
   // Assistant - Main assistant orchestrator
   ServiceContainer.register('Assistant', () => {
-    return new Assistant();
+    const assistantService = ServiceContainer.get<AssistantService>('AssistantService');
+    const conversationService = ServiceContainer.get<ConversationService>('ConversationService');
+    const assistantMemories = ServiceContainer.get<AssistantMemories>('AssistantMemories');
+    const memorySearchService = ServiceContainer.get<MemorySearchService>('MemorySearchService');
+
+    return new Assistant(
+      assistantService,
+      conversationService,
+      assistantMemories,
+      memorySearchService
+    );
   });
 }

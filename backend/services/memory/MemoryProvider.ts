@@ -29,9 +29,8 @@ export class MemoryProviderBuilder {
   private fragments: MemoryFragment[] = [];
   private memoryRepository: IMemoryRepository;
 
-  constructor() {
-    const memoryRepoFactory = new MemoryRepositoryFactory();
-    this.memoryRepository = memoryRepoFactory.build();
+  constructor(memoryRepository: IMemoryRepository) {
+    this.memoryRepository = memoryRepository;
   }
 
   /**
@@ -99,16 +98,21 @@ export class MemoryProviderBuilder {
 export class MemoryProvider {
   private readonly memoryRepository: IMemoryRepository;
 
-  constructor() {
-    const memoryRepoFactory = new MemoryRepositoryFactory();
-    this.memoryRepository = memoryRepoFactory.build();
+  constructor(memoryRepository?: IMemoryRepository) {
+    // Allow dependency injection for testing, create default if not provided
+    if (memoryRepository) {
+      this.memoryRepository = memoryRepository;
+    } else {
+      const memoryRepoFactory = new MemoryRepositoryFactory();
+      this.memoryRepository = memoryRepoFactory.build();
+    }
   }
 
   /**
    * Create a new builder for flexible memory composition.
    */
   builder(): MemoryProviderBuilder {
-    return new MemoryProviderBuilder();
+    return new MemoryProviderBuilder(this.memoryRepository);
   }
 
   /**

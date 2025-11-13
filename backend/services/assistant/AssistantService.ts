@@ -10,13 +10,18 @@ export class AssistantService {
 
   private readonly openAIService: OpenAIService;
 
-  constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENAI_API_KEY environment variable is not set");
+  constructor(openAIService?: OpenAIService) {
+    // Allow dependency injection for testing, create default if not provided
+    if (openAIService) {
+      this.openAIService = openAIService;
+    } else {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("OPENAI_API_KEY environment variable is not set");
+      }
+      const openAIFactory = new OpenAIServiceFactory();
+      this.openAIService = openAIFactory.build();
     }
-    const openAIFactory = new OpenAIServiceFactory();
-    this.openAIService = openAIFactory.build();
   }
 
 
