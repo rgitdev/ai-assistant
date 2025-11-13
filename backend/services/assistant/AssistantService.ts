@@ -1,16 +1,19 @@
 import { OpenAIService, ConversationMessage } from "backend/client/openai/OpenAIService";
 import { AssistantPromptBuilder } from "backend/assistant/AssistantPromptBuilder";
+import { ToolRegistry } from "./ToolRegistry";
 
 /**
  * Service responsible for OpenAI communication.
- * Keeps dependencies simple - only uses OpenAI client.
+ * Supports both simple conversations and tool-enhanced conversations.
  */
 export class AssistantService {
 
   private readonly openAIService: OpenAIService;
+  private readonly toolRegistry?: ToolRegistry;
 
-  constructor(openAIService: OpenAIService) {
+  constructor(openAIService: OpenAIService, toolRegistry?: ToolRegistry) {
     this.openAIService = openAIService;
+    this.toolRegistry = toolRegistry;
   }
 
 
@@ -52,6 +55,52 @@ export class AssistantService {
     );
 
     return responseJson;
+  }
+
+  /**
+   * Send a conversation to OpenAI with tool support.
+   * OpenAI will automatically decide when to use tools.
+   * Requires ToolRegistry to be provided in constructor.
+   */
+  async sendConversationWithTools(
+    systemPrompt: string,
+    messages: ConversationMessage[],
+    options: {
+      maxToolIterations?: number;
+      enableTools?: boolean;
+      toolNames?: string[];
+    } = {}
+  ): Promise<string> {
+    if (!this.toolRegistry) {
+      throw new Error("ToolRegistry is required for sendConversationWithTools. Please provide it in the constructor.");
+    }
+
+    const { maxToolIterations = 5, enableTools = true, toolNames } = options;
+    const tools = enableTools ? this.toolRegistry.getFilteredOpenAIToolDefinitions(toolNames) : undefined;
+
+    // Only include toolChoice when tools are enabled (OpenAI doesn't allow tool_choice without tools)
+    const toolOptions = enableTools
+      ? { maxToolIterations, toolChoice: "auto" as const }
+      : { maxToolIterations };
+
+    return this.openAIService.sendConversationWithTools(
+      systemPrompt,
+      messages,
+      tools,
+      (name, args) => this.toolRegistry!.executeTool(name, args),
+      toolOptions
+    );
+  }
+
+  /**
+   * Get list of available tools.
+   * Requires ToolRegistry to be provided in constructor.
+   */
+  getAvailableTools(): string[] {
+    if (!this.toolRegistry) {
+      return [];
+    }
+    return this.toolRegistry.getToolNames();
   }
 
 }

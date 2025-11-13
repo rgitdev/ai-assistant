@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { AssistantServiceWithTools } from "../AssistantServiceWithTools";
+import { AssistantService } from "../AssistantService";
 import { ToolRegistry } from "../ToolRegistry";
 import { SearchMemoriesTool } from "../tools/SearchMemoriesTool";
 import { SearchMemoriesByCategoryTool } from "../tools/SearchMemoriesByCategoryTool";
@@ -7,12 +7,14 @@ import { MemorySearchService } from "@backend/services/memory/MemorySearchServic
 import { MemoryFileRepository } from "@backend/repository/memory/MemoryFileRepository";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { OpenAIEmbeddingService } from "@backend/client/openai/OpenAIEmbeddingService";
+import { OpenAIService } from "@backend/client/openai/OpenAIService";
+import { OpenAIServiceFactory } from "@backend/client/openai/OpenAIServiceFactory";
 import { TestLogger } from "@backend/utils/TestLogger";
 import * as path from "path";
 import * as fs from "fs";
 
 /**
- * Integration Tests for AssistantServiceWithTools
+ * Integration Tests for AssistantService with Tools
  *
  * These tests make REAL API calls to OpenAI and are more expensive/slower than unit tests.
  * They verify end-to-end functionality including:
@@ -29,9 +31,10 @@ import * as fs from "fs";
  * Run separately from unit tests:
  * bun test backend/services/assistant/__tests__/AssistantServiceWithToolsIT.test.ts
  */
-describe("AssistantServiceWithToolsIT - Integration Tests", () => {
-  let assistantService: AssistantServiceWithTools;
+describe("AssistantService Integration Tests", () => {
+  let assistantService: AssistantService;
   let toolRegistry: ToolRegistry;
+  let openAIService: OpenAIService;
   let memorySearchService: MemorySearchService;
   let memoryRepository: MemoryFileRepository;
   let vectorStore: VectorStore;
@@ -82,8 +85,12 @@ describe("AssistantServiceWithToolsIT - Integration Tests", () => {
     toolRegistry.registerTool(searchMemoriesTool);
     toolRegistry.registerTool(searchMemoriesByCategoryTool);
 
-    // 7. Create AssistantServiceWithTools
-    assistantService = new AssistantServiceWithTools(toolRegistry);
+    // 7. Create OpenAIService
+    const factory = new OpenAIServiceFactory();
+    openAIService = factory.build();
+
+    // 8. Create AssistantService with tool support
+    assistantService = new AssistantService(openAIService, toolRegistry);
 
     testLogger.setup("Integration test environment setup complete");
   });

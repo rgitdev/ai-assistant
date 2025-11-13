@@ -7,7 +7,6 @@ import { MemoryProvider } from '@backend/services/memory/MemoryProvider';
 import { QueryService } from '@backend/services/query/QueryService';
 import { MemoryQueryResolver } from '@backend/services/memory/MemoryQueryResolver';
 import { AssistantService } from '@backend/services/assistant/AssistantService';
-import { AssistantServiceWithTools } from '@backend/services/assistant/AssistantServiceWithTools';
 import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
 
 /**
@@ -42,13 +41,13 @@ export function registerAssistant() {
 
   // Assistant - Main assistant orchestrator
   ServiceContainer.register('Assistant', () => {
-    const assistantServiceWithTools = ServiceContainer.get<AssistantServiceWithTools>('AssistantServiceWithTools');
+    const assistantService = ServiceContainer.get<AssistantService>('AssistantServiceWithTools');
     const conversationService = ServiceContainer.get<ConversationService>('ConversationService');
     const assistantMemories = ServiceContainer.get<AssistantMemories>('AssistantMemories');
     const memorySearchService = ServiceContainer.get<MemorySearchService>('MemorySearchService');
 
     return new Assistant(
-      assistantServiceWithTools,
+      assistantService,
       conversationService,
       assistantMemories,
       memorySearchService

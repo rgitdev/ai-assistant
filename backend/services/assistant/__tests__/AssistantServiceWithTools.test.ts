@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { AssistantServiceWithTools } from "../AssistantServiceWithTools";
+import { AssistantService } from "../AssistantService";
 import { ToolRegistry } from "../ToolRegistry";
 import { SearchMemoriesTool } from "../tools/SearchMemoriesTool";
 import { SearchMemoriesByCategoryTool } from "../tools/SearchMemoriesByCategoryTool";
@@ -7,12 +7,15 @@ import { MemorySearchService } from "@backend/services/memory/MemorySearchServic
 import { MemoryFileRepository } from "@backend/repository/memory/MemoryFileRepository";
 import { VectorStore } from "@backend/client/vector/VectorStore";
 import { MemoryCategory } from "@backend/models/Memory";
+import { OpenAIService } from "@backend/client/openai/OpenAIService";
+import { OpenAIServiceFactory } from "@backend/client/openai/OpenAIServiceFactory";
 import * as path from "path";
 import * as fs from "fs";
 
-describe("AssistantServiceWithTools", () => {
-  let assistantService: AssistantServiceWithTools;
+describe("AssistantService with Tools", () => {
+  let assistantService: AssistantService;
   let toolRegistry: ToolRegistry;
+  let openAIService: OpenAIService;
   let memorySearchService: MemorySearchService;
   let memoryRepository: MemoryFileRepository;
   let vectorStore: VectorStore;
@@ -48,8 +51,12 @@ describe("AssistantServiceWithTools", () => {
     toolRegistry.registerTool(searchMemoriesTool);
     toolRegistry.registerTool(searchMemoriesByCategoryTool);
 
-    // 6. Create AssistantServiceWithTools
-    assistantService = new AssistantServiceWithTools(toolRegistry);
+    // 6. Create OpenAIService
+    const factory = new OpenAIServiceFactory();
+    openAIService = factory.build();
+
+    // 7. Create AssistantService with tool support
+    assistantService = new AssistantService(openAIService, toolRegistry);
   });
 
   afterAll(() => {
@@ -381,7 +388,7 @@ describe("AssistantServiceWithTools", () => {
     });
   });
 
-  describe("AssistantServiceWithTools", () => {
+  describe("AssistantService Tool Support", () => {
     test("should be initialized with tools", () => {
       expect(assistantService).toBeDefined();
       expect(assistantService.getAvailableTools().length).toBeGreaterThan(0);
