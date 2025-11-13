@@ -1,23 +1,24 @@
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
-import { AssistantService } from "@backend/services/assistant/AssistantService";
+import { AssistantServiceWithTools } from "@backend/services/assistant/AssistantServiceWithTools";
 import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilder";
 import { AssistantMemories } from "@backend/assistant/AssistantMemories";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { ConversationService } from "@backend/services/conversation/ConversationService";
 import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
 import { assistantLogger } from "@backend/assistant/AssistantLogger";
+import { AssistantTools } from "@backend/assistant/AssistantTools";
 
 export class Assistant {
 
-  assistantService: AssistantService;
+  assistantService: AssistantServiceWithTools;
   conversationService: ConversationService;
   assistantMemories: AssistantMemories;
   memorySearchService: MemorySearchService;
 
   constructor(
-    assistantService: AssistantService,
+    assistantService: AssistantServiceWithTools,
     conversationService: ConversationService,
     assistantMemories: AssistantMemories,
     memorySearchService: MemorySearchService
@@ -102,6 +103,9 @@ export class Assistant {
     const memoryMessages = await this.assistantMemories.getMemoryMessages(messages[messages.length - 1].content);
     promptBuilder.withMemoryMessages(memoryMessages);
 
+    // Add tools context (includes system instruction about available tools)
+    promptBuilder.withTools();
+
     // Add conversation messages
     promptBuilder.withConversationMessages(messages);
 
@@ -113,7 +117,16 @@ export class Assistant {
 
     console.log("Built enhanced messages:", enhancedMessages.length, "messages");
 
-    const response = await this.assistantService.sendConversation(systemPrompt, enhancedMessages);
+    // Send conversation with tools enabled
+    const response = await this.assistantService.sendConversationWithTools(
+      systemPrompt,
+      enhancedMessages,
+      {
+        enableTools: true,
+        toolNames: AssistantTools.getToolNames(),
+        maxToolIterations: 5
+      }
+    );
     return response;
   }
 

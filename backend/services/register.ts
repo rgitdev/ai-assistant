@@ -1,6 +1,7 @@
 import { ServiceContainer } from '@backend/di/ServiceContainer';
 import { ConversationService } from '@backend/services/conversation/ConversationService';
 import { AssistantService } from '@backend/services/assistant/AssistantService';
+import { AssistantServiceWithTools } from '@backend/services/assistant/AssistantServiceWithTools';
 import { MemoryCreator } from '@backend/services/memory/MemoryCreator';
 import { MemoryProvider } from '@backend/services/memory/MemoryProvider';
 import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
@@ -11,6 +12,8 @@ import { IMemoryRepository } from '@backend/repository/memory/IMemoryRepository'
 import { VectorStore } from '@backend/client/vector/VectorStore';
 import { OpenAIEmbeddingService } from '@backend/client/openai/OpenAIEmbeddingService';
 import { OpenAIService } from '@backend/client/openai/OpenAIService';
+import { ToolRegistry } from '@backend/services/assistant/ToolRegistry';
+import { WeatherForecastTool } from '@backend/services/assistant/tools/weather/WeatherForecastTool';
 
 /**
  * Register all business service layer components.
@@ -64,5 +67,22 @@ export function registerServices() {
     const vectorStore = ServiceContainer.get<VectorStore>('VectorStore');
     const embeddingService = ServiceContainer.get<OpenAIEmbeddingService>('OpenAIEmbeddingService');
     return new MemoryQueryResolver(vectorStore, embeddingService);
+  });
+
+  // Tool Registry with registered tools
+  ServiceContainer.register('ToolRegistry', () => {
+    const toolRegistry = new ToolRegistry();
+
+    // Register WeatherForecastTool
+    const weatherForecastTool = new WeatherForecastTool();
+    toolRegistry.registerTool(weatherForecastTool);
+
+    return toolRegistry;
+  });
+
+  // Assistant service with tool support
+  ServiceContainer.register('AssistantServiceWithTools', () => {
+    const toolRegistry = ServiceContainer.get<ToolRegistry>('ToolRegistry');
+    return new AssistantServiceWithTools(toolRegistry);
   });
 }

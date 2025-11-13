@@ -4,6 +4,7 @@ import { PersonaComponent } from "./prompts/components/PersonaComponent";
 import { ChatUsageComponent } from "./prompts/components/ChatUsageComponent";
 import { TimeContextSystemPromptComponent, TimeContextMessageComponent } from "./prompts/components/TimeContextPromptComponent";
 import { MemorySystemPromptComponent, MemoryMessageComponent } from "./prompts/components/MemoryPromptComponent";
+import { ToolsPromptComponent } from "./prompts/components/ToolsPromptComponent";
 
 /**
  * Builder class for constructing assistant prompts using a modular component system.
@@ -74,6 +75,15 @@ export class AssistantPromptBuilder {
       );
     }
     return this;
+  }
+
+  /**
+   * Add tools context to the conversation.
+   * Registers system instruction about available tools.
+   * Tools are provided via OpenAI API, not as messages.
+   */
+  withTools(): this {
+    return this.registerComponent(new ToolsPromptComponent());
   }
 
   /**

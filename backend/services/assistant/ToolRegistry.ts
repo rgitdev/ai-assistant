@@ -45,6 +45,28 @@ export class ToolRegistry {
   }
 
   /**
+   * Get filtered tool definitions in OpenAI format
+   * @param toolNames - Array of tool names to include. If not provided, returns all tools.
+   */
+  getFilteredOpenAIToolDefinitions(toolNames?: string[]): ChatCompletionTool[] {
+    if (!toolNames || toolNames.length === 0) {
+      return this.getOpenAIToolDefinitions();
+    }
+
+    return toolNames
+      .map(name => this.tools.get(name))
+      .filter((tool): tool is Tool => tool !== undefined)
+      .map(tool => ({
+        type: "function" as const,
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters
+        }
+      }));
+  }
+
+  /**
    * Execute a tool by name with arguments
    */
   async executeTool(name: string, args: any): Promise<any> {

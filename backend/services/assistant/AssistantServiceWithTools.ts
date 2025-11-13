@@ -3,7 +3,7 @@
 
 import { ConversationMessage, OpenAIService } from "backend/client/openai/OpenAIService";
 import { OpenAIServiceFactory } from "backend/client/openai/OpenAIServiceFactory";
-import { ToolRegistry } from "@backend/assistant/ToolRegistry";
+import { ToolRegistry } from "./ToolRegistry";
 
 export class AssistantServiceWithTools {
   private readonly openAIService: OpenAIService;
@@ -30,10 +30,11 @@ export class AssistantServiceWithTools {
     options: {
       maxToolIterations?: number;
       enableTools?: boolean;
+      toolNames?: string[];
     } = {}
   ): Promise<string> {
-    const { maxToolIterations = 5, enableTools = true } = options;
-    const tools = enableTools ? this.toolRegistry.getOpenAIToolDefinitions() : undefined;
+    const { maxToolIterations = 5, enableTools = true, toolNames } = options;
+    const tools = enableTools ? this.toolRegistry.getFilteredOpenAIToolDefinitions(toolNames) : undefined;
 
     // Only include toolChoice when tools are enabled (OpenAI doesn't allow tool_choice without tools)
     const toolOptions = enableTools
