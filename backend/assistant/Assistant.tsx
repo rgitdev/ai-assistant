@@ -76,18 +76,27 @@ export class Assistant {
   async handleMessage(conversationId: string, message: string): Promise<{ response: string; conversationId: string }> {
     assistantLogger.logMessage(conversationId, message);
 
-    // Add user message to conversation
+    // Step 1: Persist user message immediately (never lose user input)
     const userChatMessage: ChatMessage = {
       id: uuidv4(),
       content: message,
       role: 'user',
       timestamp: new Date().toISOString()
     };
-
     await this.conversationService.addMessage(conversationId, userChatMessage);
 
-    // Generate and add assistant response
-    const response = await this.generateAndAddResponse(conversationId);
+    // Step 2: Generate assistant response (can fail - that's okay, user message is saved)
+    const response = await this.generateResponse(conversationId);
+
+    // Step 3: Persist assistant response (only reached if generation succeeded)
+    const assistantChatMessage: ChatMessage = {
+      id: uuidv4(),
+      content: response,
+      role: 'assistant',
+      timestamp: new Date().toISOString()
+    };
+    await this.conversationService.addMessage(conversationId, assistantChatMessage);
+    assistantLogger.logResponseGenerated(conversationId, response);
 
     return { response, conversationId };
   }
@@ -95,11 +104,12 @@ export class Assistant {
   // Internal methods below
 
   /**
-   * Generate assistant response for the current conversation and add it to the conversation
+   * Generate assistant response for the current conversation
+   * Pure generation function - no side effects, no persistence
    * @param conversationId - The conversation ID
    * @returns The assistant's response text
    */
-  private async generateAndAddResponse(conversationId: string): Promise<string> {
+  private async generateResponse(conversationId: string): Promise<string> {
     // Get full conversation history and send to OpenAI
     const conversationMessages = await this.conversationService.getConversationMessages(conversationId);
     const openAIMessages: ConversationMessage[] = conversationMessages.map(msg => ({
@@ -108,18 +118,6 @@ export class Assistant {
     }));
 
     const response = await this.sendConversation(openAIMessages);
-
-    // Add assistant response to conversation
-    const assistantChatMessage: ChatMessage = {
-      id: uuidv4(),
-      content: response,
-      role: 'assistant',
-      timestamp: new Date().toISOString()
-    };
-
-    await this.conversationService.addMessage(conversationId, assistantChatMessage);
-    assistantLogger.logResponseGenerated(conversationId, response);
-
     return response;
   }
 
