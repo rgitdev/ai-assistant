@@ -1,7 +1,7 @@
 import React from 'react';
-import { ChatContainer } from './ChatContainer';
-import { ChatHeader } from './ChatHeader';
-import { Message } from '../types/Message';
+import { ChatContainer } from '../Layout/ChatContainer';
+import { ChatHeader } from '../Layout/ChatHeader';
+import { Message } from '../../types/Message';
 
 interface ChatAppProps {
   messages: Message[];

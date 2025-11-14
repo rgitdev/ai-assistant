@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { conversationClient, Conversation } from '../client/ConversationClient';
-import { ConversationListItem } from './ConversationListItem';
+import { conversationClient, Conversation } from '../../client/ConversationClient';
+import { ConversationListItem } from '../UI/ConversationListItem';
 
 interface ConversationSelectionProps {
   selectedConversationId?: string | null;

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { UserMessage, AssistantMessage, Message } from './Messages';
+import { UserMessage, AssistantMessage, Message } from '../Messages';
 
 interface MessageListProps {
   messages: Message[];

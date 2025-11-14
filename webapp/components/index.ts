@@ -1,14 +1,24 @@
-export { ChatApp } from './ChatApp';
-export { ChatContainer } from './ChatContainer';
-export { ChatHeader } from './ChatHeader';
-export { ChatInput } from './ChatInput';
+// Views
+export { ChatApp } from './Views/ChatApp';
+export { About } from './Views/About';
+export { ConversationSelection } from './Views/ConversationSelection';
+
+// Layout
+export { ChatContainer } from './Layout/ChatContainer';
+export { ChatHeader } from './Layout/ChatHeader';
+export { MessageList } from './Layout/MessageList';
+
+// UI
+export { ChatInput } from './UI/ChatInput';
+export { ChatTitle } from './UI/ChatTitle';
+export { TypingIndicator } from './UI/TypingIndicator';
+export { ConversationListItem } from './UI/ConversationListItem';
+export { AssistantStatus } from './UI/AssistantStatus';
+
+// Messages
 export { UserMessage } from './Messages/UserMessage';
 export { AssistantMessage } from './Messages/AssistantMessage';
-export { ChatTitle } from './ChatTitle';
-export { MessageList } from './MessageList';
-export { TypingIndicator } from './TypingIndicator';
+
+// Menu
 export { Menu } from './Menu/Menu';
 export { MenuItem } from './Menu/MenuItem';
-export { About } from './About';
-export { ConversationSelection } from './ConversationSelection';
-export { ConversationListItem } from './ConversationListItem';
