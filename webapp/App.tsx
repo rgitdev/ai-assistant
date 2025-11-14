@@ -2,10 +2,7 @@ import "./index.css";
 import "./styles/markdown.css";
 import "./styles/menu.css";
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChatApp } from "./components/ChatApp";
-import { Menu } from "./components/Menu/Menu";
-import { About } from "./components/About";
-import { ConversationSelection } from "./components/ConversationSelection";
+import { ChatApp, Menu, About, ConversationSelection } from "./components";
 import { Message } from './types/Message';
 import { ChatService } from './services/ChatService';
 

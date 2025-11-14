@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageList } from './MessageList';
-import { ChatInput } from './ChatInput';
-import { Message } from './Messages';
+import { ChatInput } from '../UI/ChatInput';
+import { Message } from '../Messages';
 
 interface ChatContainerProps {
   messages: Message[];

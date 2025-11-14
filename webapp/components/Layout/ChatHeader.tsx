@@ -1,6 +1,6 @@
 import React from 'react';
-import { AssistantStatus } from './AssistantStatus';
-import { ChatTitle } from './ChatTitle';
+import { AssistantStatus } from '../UI/AssistantStatus';
+import { ChatTitle } from '../UI/ChatTitle';
 
 interface ChatHeaderProps {
   messageCount: number;

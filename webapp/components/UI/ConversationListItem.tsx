@@ -1,5 +1,5 @@
 import React from 'react';
-import { Conversation } from '../client/ConversationClient';
+import { Conversation } from '../../client/ConversationClient';
 
 interface ConversationListItemProps {
   conversation: Conversation;

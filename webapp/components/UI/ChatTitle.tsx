@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { conversationClient } from '../client/ConversationClient';
+import { conversationClient } from '../../client/ConversationClient';
 
 interface ChatTitleProps {
   conversationId: string | null;
