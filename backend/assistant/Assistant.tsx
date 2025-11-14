@@ -1,7 +1,7 @@
 import { ConversationMessage } from "backend/client/openai/OpenAIService";
 import { ChatMessage } from "backend/models/ChatMessage";
 import { v4 as uuidv4 } from 'uuid';
-import { AssistantServiceWithTools } from "@backend/services/assistant/AssistantServiceWithTools";
+import { AssistantService } from "@backend/services/assistant/AssistantService";
 import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilder";
 import { AssistantMemories } from "@backend/assistant/AssistantMemories";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
@@ -12,13 +12,13 @@ import { AssistantTools } from "@backend/assistant/AssistantTools";
 
 export class Assistant {
 
-  assistantService: AssistantServiceWithTools;
+  assistantService: AssistantService;
   conversationService: ConversationService;
   assistantMemories: AssistantMemories;
   memorySearchService: MemorySearchService;
 
   constructor(
-    assistantService: AssistantServiceWithTools,
+    assistantService: AssistantService,
     conversationService: ConversationService,
     assistantMemories: AssistantMemories,
     memorySearchService: MemorySearchService

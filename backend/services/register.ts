@@ -1,7 +1,6 @@
 import { ServiceContainer } from '@backend/di/ServiceContainer';
 import { ConversationService } from '@backend/services/conversation/ConversationService';
 import { AssistantService } from '@backend/services/assistant/AssistantService';
-import { AssistantServiceWithTools } from '@backend/services/assistant/AssistantServiceWithTools';
 import { MemoryCreator } from '@backend/services/memory/MemoryCreator';
 import { MemoryProvider } from '@backend/services/memory/MemoryProvider';
 import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
@@ -31,10 +30,11 @@ export function registerServices() {
     return new ConversationService(conversationRepository);
   });
 
-  // OpenAI communication service
+  // OpenAI communication service with tool support
   ServiceContainer.register('AssistantService', () => {
     const openAIService = ServiceContainer.get<OpenAIService>('OpenAIService');
-    return new AssistantService(openAIService);
+    const toolRegistry = ServiceContainer.get<ToolRegistry>('ToolRegistry');
+    return new AssistantService(openAIService, toolRegistry);
   });
 
   // Memory creation service
@@ -78,11 +78,5 @@ export function registerServices() {
     toolRegistry.registerTool(weatherForecastTool);
 
     return toolRegistry;
-  });
-
-  // Assistant service with tool support
-  ServiceContainer.register('AssistantServiceWithTools', () => {
-    const toolRegistry = ServiceContainer.get<ToolRegistry>('ToolRegistry');
-    return new AssistantServiceWithTools(toolRegistry);
   });
 }
