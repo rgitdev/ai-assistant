@@ -30,14 +30,8 @@ export function registerServices() {
     return new ConversationService(conversationRepository);
   });
 
-  // OpenAI communication service (without tools - used for memory creation)
+  // OpenAI communication service with tool support
   ServiceContainer.register('AssistantService', () => {
-    const openAIService = ServiceContainer.get<OpenAIService>('OpenAIService');
-    return new AssistantService(openAIService);
-  });
-
-  // OpenAI communication service with tool support (used for interactive conversations)
-  ServiceContainer.register('AssistantServiceWithTools', () => {
     const openAIService = ServiceContainer.get<OpenAIService>('OpenAIService');
     const toolRegistry = ServiceContainer.get<ToolRegistry>('ToolRegistry');
     return new AssistantService(openAIService, toolRegistry);
