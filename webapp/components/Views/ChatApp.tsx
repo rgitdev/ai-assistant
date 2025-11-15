@@ -2,6 +2,7 @@ import React from 'react';
 import { ChatContainer } from '../Layout/ChatContainer';
 import { ChatHeader } from '../Layout/ChatHeader';
 import { Message } from '../../types/Message';
+import './ChatApp.css';
 
 interface ChatAppProps {
   messages: Message[];

@@ -1,6 +1,5 @@
-import "./index.css";
+import "./styles/global.css";
 import "./styles/markdown.css";
-import "./styles/menu.css";
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatApp, Menu, About, ConversationSelection } from "./components";
 import { Message } from './types/Message';

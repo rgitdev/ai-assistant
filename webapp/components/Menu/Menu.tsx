@@ -1,5 +1,6 @@
 import React from 'react';
 import { MenuItem } from './MenuItem';
+import './Menu.css';
 
 interface MenuProps {
   activeView: string;
