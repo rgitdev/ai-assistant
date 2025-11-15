@@ -33,21 +33,23 @@ export class Assistant {
   /**
    * Handle a new message by creating a new conversation
    * @param message - The user's message
+   * @param images - Optional array of image files
    * @returns Object containing the assistant's response and the new conversationId
    */
-  async handleNewMessage(message: string): Promise<{ response: string; conversationId: string }> {
+  async handleNewMessage(message: string, images?: File[] | Blob[]): Promise<{ response: string; conversationId: string }> {
     const conversationId = await this.conversationService.createConversation();
     assistantLogger.logNewConversation(conversationId, message);
-    return await this.handleMessage(conversationId, message);
+    return await this.handleMessage(conversationId, message, images);
   }
 
   /**
    * Handle a message in an existing conversation
    * @param conversationId - The ID of the existing conversation
    * @param message - The user's message
+   * @param images - Optional array of image files
    * @returns Object containing the assistant's response and conversationId
    */
-  async handleMessage(conversationId: string, message: string): Promise<{ response: string; conversationId: string }> {
+  async handleMessage(conversationId: string, message: string, images?: File[] | Blob[]): Promise<{ response: string; conversationId: string }> {
     assistantLogger.logMessage(conversationId, message);
 
     // Step 1: Persist user message immediately (never lose user input)
@@ -60,7 +62,7 @@ export class Assistant {
     await this.conversationService.addMessage(conversationId, userChatMessage);
 
     // Step 2: Generate assistant response (can fail - that's okay, user message is saved)
-    const response = await this.generateResponse(conversationId);
+    const response = await this.generateResponse(conversationId, images);
 
     // Step 3: Persist assistant response (only reached if generation succeeded)
     const assistantChatMessage: ChatMessage = {
@@ -81,15 +83,44 @@ export class Assistant {
    * Generate assistant response for the current conversation
    * Pure generation function - no side effects, no persistence
    * @param conversationId - The conversation ID
+   * @param images - Optional array of image files to include with the last user message
    * @returns The assistant's response text
    */
-  private async generateResponse(conversationId: string): Promise<string> {
+  private async generateResponse(conversationId: string, images?: File[] | Blob[]): Promise<string> {
     // Get full conversation history
     const conversationMessages = await this.conversationService.getConversationMessages(conversationId);
     const messages: ConversationMessage[] = conversationMessages.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
+
+    // If images are provided, convert the last user message to multi-part content
+    if (images && images.length > 0 && messages.length > 0 && messages[messages.length - 1].role === 'user') {
+      const lastMessage = messages[messages.length - 1];
+      const textContent = typeof lastMessage.content === 'string' ? lastMessage.content : '';
+
+      // Convert images to base64
+      const imageContents = await Promise.all(
+        images.map(async (image) => {
+          const arrayBuffer = await image.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          const mimeType = image.type || 'image/jpeg';
+          return {
+            type: "image_url" as const,
+            image_url: { url: `data:${mimeType};base64,${base64}` }
+          };
+        })
+      );
+
+      // Create multi-part content with text and images
+      messages[messages.length - 1] = {
+        role: 'user',
+        content: [
+          { type: "text" as const, text: textContent },
+          ...imageContents
+        ]
+      };
+    }
 
     console.log("Sending conversation to assistant:", messages.length, "messages");
 
@@ -100,7 +131,12 @@ export class Assistant {
     promptBuilder.withTimeContext();
 
     // Add memory context (includes both system instruction and messages)
-    const memoryMessages = await this.assistantMemories.getMemoryMessages(messages[messages.length - 1].content);
+    // Extract text content from last message (handle both string and multi-part content)
+    const lastMessageContent = messages[messages.length - 1].content;
+    const lastMessageText = typeof lastMessageContent === 'string'
+      ? lastMessageContent
+      : lastMessageContent.find(part => part.type === 'text')?.text || '';
+    const memoryMessages = await this.assistantMemories.getMemoryMessages(lastMessageText);
     promptBuilder.withMemoryMessages(memoryMessages);
 
     // Add tools context (includes system instruction about available tools)

@@ -49,20 +49,20 @@ export function App() {
     }
   }, [chatService]);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, images?: File[]) => {
     const userMessage = chatService.createUserMessage(content);
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      const { content: aiResponse, conversationId: newConversationId } = 
-        await chatService.sendMessage(content, conversationId);
-      
+      const { content: aiResponse, conversationId: newConversationId } =
+        await chatService.sendMessage(content, conversationId, images);
+
       if (!conversationId && newConversationId) {
         console.log('Setting new conversationId:', newConversationId);
         setConversationId(newConversationId);
       }
-      
+
       const assistantMessage = chatService.createAssistantMessage(aiResponse);
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {

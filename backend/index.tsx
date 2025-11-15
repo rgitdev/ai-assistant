@@ -45,9 +45,28 @@ const server = serve({
       },
       async POST(req) {
         console.log(`Chat request: ${req.method} ${req.url}`);
-        
+
         try {
-          const requestBody: ChatRequest = await req.json();
+          let requestBody: ChatRequest;
+          const contentType = req.headers.get('content-type') || '';
+
+          // Handle FormData (with images)
+          if (contentType.includes('multipart/form-data')) {
+            const formData = await req.formData();
+            const message = formData.get('message') as string;
+            const conversationId = formData.get('conversationId') as string | null;
+            const imageFiles = formData.getAll('images') as File[];
+
+            requestBody = {
+              message,
+              conversationId: conversationId || undefined,
+              images: imageFiles.length > 0 ? imageFiles : undefined,
+            };
+          } else {
+            // Handle JSON (text-only)
+            requestBody = await req.json();
+          }
+
           const result = await assistantController.handleChat(requestBody);
           return addCorsHeaders(Response.json(result));
         } catch (error) {

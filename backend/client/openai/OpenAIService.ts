@@ -12,9 +12,15 @@ export type JsonString = string;
 // Callback used to execute a tool/function call emitted by the model
 export type ToolExecutor = (name: string, args: any) => Promise<any>;
 
+export type MessageContent = string | Array<{
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string };
+}>;
+
 export interface ConversationMessage {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: MessageContent;
 }
 
 export interface IOpenAIService {

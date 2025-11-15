@@ -8,6 +8,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string;
   conversationId?: string;
+  images?: File[] | Blob[];
 }
 
 export interface ChatResponse {

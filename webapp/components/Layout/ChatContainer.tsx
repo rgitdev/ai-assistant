@@ -5,7 +5,7 @@ import { Message } from '../Messages';
 
 interface ChatContainerProps {
   messages: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, images?: File[]) => void;
   isLoading?: boolean;
   conversationId: string | null;
   onMessagesReload: (conversationId: string) => Promise<void>;

@@ -17,13 +17,15 @@ export class ChatService {
   }
 
   async sendMessage(
-    message: string, 
-    conversationId?: string | null
+    message: string,
+    conversationId?: string | null,
+    images?: File[]
   ): Promise<SendMessageResult> {
     try {
       const data = await assistantClient.sendMessage({
         message,
         conversationId: conversationId || undefined,
+        images,
       });
       return {
         content: data.content,

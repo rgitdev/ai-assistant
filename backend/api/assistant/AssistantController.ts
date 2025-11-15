@@ -29,8 +29,8 @@ export class AssistantController {
     } else {
       // Use the new simplified Assistant API
       const result = requestBody.conversationId
-        ? await this.assistant.handleMessage(requestBody.conversationId, requestBody.message)
-        : await this.assistant.handleNewMessage(requestBody.message);
+        ? await this.assistant.handleMessage(requestBody.conversationId, requestBody.message, requestBody.images)
+        : await this.assistant.handleNewMessage(requestBody.message, requestBody.images);
 
       responseContent = result.response;
       conversationId = result.conversationId;
