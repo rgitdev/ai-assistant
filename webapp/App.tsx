@@ -65,6 +65,14 @@ export function App() {
 
       const assistantMessage = chatService.createAssistantMessage(aiResponse);
       setMessages(prev => [...prev, assistantMessage]);
+
+      // If images were sent, reload the conversation to get imageIds for the user message
+      if (images && images.length > 0) {
+        const activeConversationId = newConversationId || conversationId;
+        if (activeConversationId) {
+          await loadConversationMessages(activeConversationId);
+        }
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage = chatService.createErrorMessage();
@@ -72,7 +80,7 @@ export function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, chatService, setConversationId]);
+  }, [conversationId, chatService, setConversationId, loadConversationMessages]);
 
   const handleNewChat = useCallback(() => {
     clearMessages();

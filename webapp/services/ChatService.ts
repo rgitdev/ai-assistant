@@ -78,13 +78,14 @@ export class ChatService {
   async loadConversationMessages(conversationId: string): Promise<Message[]> {
     try {
       const conversationData = await conversationClient.getConversation(conversationId);
-      
+
       // Convert ChatMessage[] to Message[]
       return conversationData.messages.map(msg => ({
         id: msg.id,
         content: msg.content,
         role: msg.role,
-        timestamp: new Date(msg.timestamp)
+        timestamp: new Date(msg.timestamp),
+        imageIds: msg.imageIds
       }));
     } catch (error) {
       console.error('Failed to load conversation messages:', error);
