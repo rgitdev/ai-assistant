@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SubmitButton } from '../Buttons/SubmitButton';
+import './ChatInput.css';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;

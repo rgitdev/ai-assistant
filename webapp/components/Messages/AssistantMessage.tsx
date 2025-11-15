@@ -4,6 +4,7 @@ import { CopyIcon } from '../Icons/CopyIcon';
 import { ThumbsUpIcon } from '../Icons/ThumbsUpIcon';
 import { ThumbsDownIcon } from '../Icons/ThumbsDownIcon';
 import { Message } from '../../types/Message';
+import './AssistantMessage.css';
 
 interface AssistantMessageProps {
   message: Message;

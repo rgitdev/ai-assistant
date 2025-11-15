@@ -2,6 +2,7 @@ import React from 'react';
 import { useMessageEdit } from '../../hooks/useMessageEdit';
 import { EditIcon } from '../Icons/EditIcon';
 import { Message } from '../../types/Message';
+import './UserMessage.css';
 
 interface UserMessageProps {
   message: Message;
