@@ -32,7 +32,12 @@ export class GetConversationTool implements Tool {
         id: m.id,
         role: m.role,
         content: m.content,
-        timestamp: m.timestamp
+        timestamp: m.timestamp,
+        imageIds: m.imageIds,
+        // Add hint if message contains images
+        imageHint: m.imageIds && m.imageIds.length > 0
+          ? `This message contains ${m.imageIds.length} image(s). Use get_images_for_analysis or analyze_message_with_images to view them.`
+          : undefined
       }))
     };
   }

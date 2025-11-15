@@ -6,7 +6,7 @@ import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilde
 import { AssistantMemories } from "@backend/assistant/AssistantMemories";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { ConversationService } from "@backend/services/conversation/ConversationService";
-import { IImageRepository } from "@backend/repository/image/IImageRepository";
+import { ImageService } from "@backend/services/image/ImageService";
 import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
 import { assistantLogger } from "@backend/assistant/AssistantLogger";
 import { AssistantTools } from "@backend/assistant/AssistantTools";
@@ -17,20 +17,20 @@ export class Assistant {
   conversationService: ConversationService;
   assistantMemories: AssistantMemories;
   memorySearchService: MemorySearchService;
-  imageRepository: IImageRepository;
+  imageService: ImageService;
 
   constructor(
     assistantService: AssistantService,
     conversationService: ConversationService,
     assistantMemories: AssistantMemories,
     memorySearchService: MemorySearchService,
-    imageRepository: IImageRepository
+    imageService: ImageService
   ) {
     this.assistantService = assistantService;
     this.conversationService = conversationService;
     this.assistantMemories = assistantMemories;
     this.memorySearchService = memorySearchService;
-    this.imageRepository = imageRepository;
+    this.imageService = imageService;
   }
 
 
@@ -58,24 +58,9 @@ export class Assistant {
 
     // Step 1: Create message ID and save images (if any)
     const messageId = uuidv4();
-    const imageIds: string[] = [];
-
-    if (images && images.length > 0) {
-      for (const image of images) {
-        const arrayBuffer = await image.arrayBuffer();
-        const imageData = Buffer.from(arrayBuffer);
-        const mimeType = image.type || 'image/jpeg';
-
-        const metadata = await this.imageRepository.saveImage(
-          conversationId,
-          messageId,
-          imageData,
-          mimeType,
-          (image as File).name
-        );
-        imageIds.push(metadata.id);
-      }
-    }
+    const imageIds = images && images.length > 0
+      ? await this.imageService.saveImagesForMessage(conversationId, messageId, images)
+      : [];
 
     // Step 2: Persist user message immediately (never lose user input)
     const userChatMessage: ChatMessage = {
@@ -125,18 +110,8 @@ export class Assistant {
       const lastMessage = messages[messages.length - 1];
       const textContent = typeof lastMessage.content === 'string' ? lastMessage.content : '';
 
-      // Convert images to base64
-      const imageContents = await Promise.all(
-        images.map(async (image) => {
-          const arrayBuffer = await image.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString('base64');
-          const mimeType = image.type || 'image/jpeg';
-          return {
-            type: "image_url" as const,
-            image_url: { url: `data:${mimeType};base64,${base64}` }
-          };
-        })
-      );
+      // Convert images to base64 using ImageService
+      const imageContents = await this.imageService.convertImagesToBase64(images);
 
       // Create multi-part content with text and images
       messages[messages.length - 1] = {
