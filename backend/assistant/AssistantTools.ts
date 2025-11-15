@@ -6,9 +6,14 @@
 export class AssistantTools {
   /**
    * List of tool names that the Assistant should have access to.
-   * Currently includes only the weather forecast tool.
+   * Includes conversation retrieval, image analysis, and weather tools.
    */
-  static readonly TOOL_NAMES = ['weather_forecast'];
+  static readonly TOOL_NAMES = [
+    'weather_forecast',
+    'get_conversation',
+    'get_images_for_analysis',
+    'analyze_message_with_images'
+  ];
 
   /**
    * Get the list of tool names available to the Assistant.
