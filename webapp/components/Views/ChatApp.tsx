@@ -9,7 +9,7 @@ interface ChatAppProps {
   isLoading: boolean;
   conversationId: string | null;
   conversationName: string | undefined;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (content: string, images?: File[]) => Promise<void>;
   onNewChat: () => void;
   onNameUpdate: (name: string) => void;
   onMessagesReload: (conversationId: string) => Promise<void>;

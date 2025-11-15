@@ -3,11 +3,13 @@ export interface ChatMessage {
   content: string;
   role: 'user' | 'assistant';
   timestamp: string;
+  imageIds?: string[]; // References to saved images
 }
 
 export interface ChatRequest {
   message: string;
   conversationId?: string;
+  images?: File[] | Blob[];
 }
 
 export interface ChatResponse {

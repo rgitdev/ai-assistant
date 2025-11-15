@@ -9,6 +9,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string;
   conversationId?: string;
+  images?: File[];
 }
 
 export interface ChatResponse {
@@ -46,12 +47,32 @@ export class AssistantClient {
    */
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
     console.log(`Sending message to ${this.baseUrl}/api/assistant/chat`);
+
+    let body: FormData | string;
+    let headers: HeadersInit = {};
+
+    // Use FormData if images are present
+    if (request.images && request.images.length > 0) {
+      const formData = new FormData();
+      formData.append('message', request.message);
+      if (request.conversationId) {
+        formData.append('conversationId', request.conversationId);
+      }
+      request.images.forEach((image, index) => {
+        formData.append('images', image);
+      });
+      body = formData;
+      // Don't set Content-Type for FormData - browser will set it with boundary
+    } else {
+      // Use JSON for text-only messages
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(request);
+    }
+
     const response = await fetch(`${this.baseUrl}/api/assistant/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
+      headers,
+      body,
     });
 
     if (!response.ok) {

@@ -7,6 +7,33 @@
   width: 100%;
 }
 
+/* Image Previews Container */
+.image-previews-container {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+}
+
+.image-previews-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.image-previews-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.image-previews-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.image-previews-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
 .input-wrapper {
   display: flex;
   align-items: flex-end;
@@ -24,6 +51,37 @@
   border-color: var(--color-primary);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
   transform: translateY(-1px);
+}
+
+.input-wrapper.dragging {
+  border-color: var(--color-primary);
+  background: rgba(102, 126, 234, 0.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Image Button */
+.image-button {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.image-button:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--color-primary);
+}
+
+.image-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .chat-textarea {
