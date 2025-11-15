@@ -6,6 +6,7 @@ import { AssistantPromptBuilder } from "@backend/assistant/AssistantPromptBuilde
 import { AssistantMemories } from "@backend/assistant/AssistantMemories";
 import { MemorySearchService } from "@backend/services/memory/MemorySearchService";
 import { ConversationService } from "@backend/services/conversation/ConversationService";
+import { IImageRepository } from "@backend/repository/image/IImageRepository";
 import { MemoryCategory, MemoryRecord } from "@backend/models/Memory";
 import { assistantLogger } from "@backend/assistant/AssistantLogger";
 import { AssistantTools } from "@backend/assistant/AssistantTools";
@@ -16,17 +17,20 @@ export class Assistant {
   conversationService: ConversationService;
   assistantMemories: AssistantMemories;
   memorySearchService: MemorySearchService;
+  imageRepository: IImageRepository;
 
   constructor(
     assistantService: AssistantService,
     conversationService: ConversationService,
     assistantMemories: AssistantMemories,
-    memorySearchService: MemorySearchService
+    memorySearchService: MemorySearchService,
+    imageRepository: IImageRepository
   ) {
     this.assistantService = assistantService;
     this.conversationService = conversationService;
     this.assistantMemories = assistantMemories;
     this.memorySearchService = memorySearchService;
+    this.imageRepository = imageRepository;
   }
 
 
@@ -52,19 +56,41 @@ export class Assistant {
   async handleMessage(conversationId: string, message: string, images?: File[] | Blob[]): Promise<{ response: string; conversationId: string }> {
     assistantLogger.logMessage(conversationId, message);
 
-    // Step 1: Persist user message immediately (never lose user input)
+    // Step 1: Create message ID and save images (if any)
+    const messageId = uuidv4();
+    const imageIds: string[] = [];
+
+    if (images && images.length > 0) {
+      for (const image of images) {
+        const arrayBuffer = await image.arrayBuffer();
+        const imageData = Buffer.from(arrayBuffer);
+        const mimeType = image.type || 'image/jpeg';
+
+        const metadata = await this.imageRepository.saveImage(
+          conversationId,
+          messageId,
+          imageData,
+          mimeType,
+          (image as File).name
+        );
+        imageIds.push(metadata.id);
+      }
+    }
+
+    // Step 2: Persist user message immediately (never lose user input)
     const userChatMessage: ChatMessage = {
-      id: uuidv4(),
+      id: messageId,
       content: message,
       role: 'user',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      imageIds: imageIds.length > 0 ? imageIds : undefined
     };
     await this.conversationService.addMessage(conversationId, userChatMessage);
 
-    // Step 2: Generate assistant response (can fail - that's okay, user message is saved)
+    // Step 3: Generate assistant response (can fail - that's okay, user message is saved)
     const response = await this.generateResponse(conversationId, images);
 
-    // Step 3: Persist assistant response (only reached if generation succeeded)
+    // Step 4: Persist assistant response (only reached if generation succeeded)
     const assistantChatMessage: ChatMessage = {
       id: uuidv4(),
       content: response,

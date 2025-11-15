@@ -8,6 +8,7 @@ import { QueryService } from '@backend/services/query/QueryService';
 import { MemoryQueryResolver } from '@backend/services/memory/MemoryQueryResolver';
 import { AssistantService } from '@backend/services/assistant/AssistantService';
 import { MemorySearchService } from '@backend/services/memory/MemorySearchService';
+import { IImageRepository } from '@backend/repository/image/IImageRepository';
 
 /**
  * Register assistant-related components.
@@ -45,12 +46,14 @@ export function registerAssistant() {
     const conversationService = ServiceContainer.get<ConversationService>('ConversationService');
     const assistantMemories = ServiceContainer.get<AssistantMemories>('AssistantMemories');
     const memorySearchService = ServiceContainer.get<MemorySearchService>('MemorySearchService');
+    const imageRepository = ServiceContainer.get<IImageRepository>('ImageRepository');
 
     return new Assistant(
       assistantService,
       conversationService,
       assistantMemories,
-      memorySearchService
+      memorySearchService,
+      imageRepository
     );
   });
 }
