@@ -1,10 +1,6 @@
 import { serve } from "bun";
 import index from "./index.html";
 import { assistantClient, ChatResponse } from "./client/AssistantClient";
-import { ImageController } from "./api/images/ImageController";
-
-// Create controller instances
-const imageController = new ImageController();
 
 const server = serve({
   routes: {
@@ -32,21 +28,35 @@ const server = serve({
     "/api/images/*": {
       async GET(req): Promise<Response> {
         const url = new URL(req.url);
-        const pathParts = url.pathname.split('/');
-        const imageId = pathParts[pathParts.length - 1];
+        const backendUrl = `http://localhost:3001${url.pathname}`;
 
-        if (!imageId) {
-          return Response.json({ error: 'Invalid image ID' }, { status: 400 });
+        try {
+          const response = await fetch(backendUrl);
+
+          if (!response.ok) {
+            return Response.json(
+              { error: 'Image not found' },
+              { status: response.status }
+            );
+          }
+
+          // Forward the image with the same content-type
+          const contentType = response.headers.get('Content-Type') || 'application/octet-stream';
+          const imageData = await response.arrayBuffer();
+
+          return new Response(imageData, {
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': 'public, max-age=31536000, immutable'
+            }
+          });
+        } catch (error) {
+          console.error('Error proxying image:', error);
+          return Response.json(
+            { error: 'Failed to fetch image' },
+            { status: 500 }
+          );
         }
-
-        // Check if requesting metadata
-        if (pathParts[pathParts.length - 1] === 'metadata') {
-          const actualImageId = pathParts[pathParts.length - 2];
-          return imageController.getImageMetadata(actualImageId);
-        }
-
-        // Get image file
-        return imageController.getImage(imageId);
       }
     },
 
