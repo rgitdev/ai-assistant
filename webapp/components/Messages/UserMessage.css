@@ -92,6 +92,28 @@
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+/* Image display styles */
+.user-message__images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.user-message__image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.user-message__image:hover {
+  transform: scale(1.05);
+}
+
 /* Edit form styles */
 .user-message__edit-form {
   display: flex;

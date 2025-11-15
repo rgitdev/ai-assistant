@@ -1,6 +1,7 @@
 import { serve } from "bun";
 import { AssistantController } from "./api/assistant/AssistantController";
 import { conversationController } from "./api/conversation/ConversationController";
+import { ImageController } from "./api/images/ImageController";
 import { ChatEditRequest, ChatRequest } from "./models/ChatMessage";
 import { SchedulerInitializer } from "./services/scheduler/SchedulerInitializer";
 import { registerAllServices } from "./registerServices";
@@ -12,6 +13,7 @@ console.log('DI container initialized');
 
 // Create controller instances AFTER service registration
 const assistantController = new AssistantController();
+const imageController = new ImageController();
 
 // CORS headers
 const corsHeaders = {
@@ -165,11 +167,11 @@ const server = serve({
       
       async PUT(req) {
         console.log(`Update conversation request: ${req.method} ${req.url}`);
-        
+
         const url = new URL(req.url);
         const pathParts = url.pathname.split('/');
         const conversationId = pathParts[pathParts.length - 1];
-        
+
         if (!conversationId) {
           return addCorsHeaders(Response.json({ error: 'Invalid conversation ID' }, { status: 400 }));
         }
@@ -179,13 +181,65 @@ const server = serve({
           if (!requestBody.name || typeof requestBody.name !== 'string') {
             return addCorsHeaders(Response.json({ error: 'Name is required and must be a string' }, { status: 400 }));
           }
-          
+
           const result = await conversationController.updateConversation(conversationId, { name: requestBody.name });
           return addCorsHeaders(Response.json(result));
         } catch (error) {
           console.error('Error updating conversation:', error);
           const status = error instanceof Error && error.message.includes('not found') ? 404 : 500;
           return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status }));
+        }
+      }
+    },
+
+    "/api/images/*": {
+      async OPTIONS(req) {
+        return addCorsHeaders(new Response(null, { status: 200 }));
+      },
+      async GET(req) {
+        console.log(`Image request: ${req.method} ${req.url}`);
+
+        const url = new URL(req.url);
+        const pathParts = url.pathname.split('/');
+        const imageId = pathParts[pathParts.length - 1];
+
+        if (!imageId) {
+          return addCorsHeaders(Response.json({ error: 'Invalid image ID' }, { status: 400 }));
+        }
+
+        // Check if requesting metadata
+        if (pathParts[pathParts.length - 1] === 'metadata') {
+          const actualImageId = pathParts[pathParts.length - 2];
+          try {
+            const metadata = await imageController.getImageMetadata(actualImageId);
+            if (!metadata) {
+              return addCorsHeaders(Response.json({ error: 'Image not found' }, { status: 404 }));
+            }
+            return addCorsHeaders(Response.json(metadata));
+          } catch (error) {
+            console.error('Error getting image metadata:', error);
+            return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 }));
+          }
+        }
+
+        // Get image file
+        try {
+          const result = await imageController.getImage(imageId);
+          if (!result) {
+            return addCorsHeaders(Response.json({ error: 'Image not found' }, { status: 404 }));
+          }
+
+          const response = new Response(result.data, {
+            headers: {
+              'Content-Type': result.mimeType,
+              'Cache-Control': 'public, max-age=31536000, immutable'
+            }
+          });
+
+          return addCorsHeaders(response);
+        } catch (error) {
+          console.error('Error getting image:', error);
+          return addCorsHeaders(Response.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 }));
         }
       }
     },
