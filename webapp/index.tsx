@@ -1,6 +1,7 @@
 import { serve } from "bun";
 import index from "./index.html";
 import { assistantClient, ChatResponse } from "./client/AssistantClient";
+import { imageClient } from "./client/ImageClient";
 
 const server = serve({
   routes: {
@@ -24,14 +25,19 @@ const server = serve({
       return Response.json(await assistantClient.sendMessage(await req.json()));
     }},
 
-    // Image proxy endpoint - proxies to backend
+    // Image proxy endpoint - proxies to backend via ImageClient
     "/api/images/*": {
       async GET(req): Promise<Response> {
         const url = new URL(req.url);
-        const backendUrl = `http://localhost:3001${url.pathname}`;
+        const pathParts = url.pathname.split('/');
+        const imageId = pathParts[pathParts.length - 1];
+
+        if (!imageId) {
+          return Response.json({ error: 'Invalid image ID' }, { status: 400 });
+        }
 
         try {
-          const response = await fetch(backendUrl);
+          const response = await imageClient.getImage(imageId);
 
           if (!response.ok) {
             return Response.json(
@@ -40,7 +46,7 @@ const server = serve({
             );
           }
 
-          // Forward the image with the same content-type
+          // Forward the image with the same content-type and caching headers
           const contentType = response.headers.get('Content-Type') || 'application/octet-stream';
           const imageData = await response.arrayBuffer();
 
