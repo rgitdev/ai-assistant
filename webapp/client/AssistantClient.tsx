@@ -4,6 +4,7 @@ export interface ChatMessage {
   content: string;
   role: 'user' | 'assistant';
   timestamp: string;
+  imageIds?: string[];
 }
 
 export interface ChatRequest {

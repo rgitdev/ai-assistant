@@ -5,4 +5,5 @@ export interface Message {
   role: 'user' | 'assistant';
   timestamp: Date;
   isTyping?: boolean;
+  imageIds?: string[];
 }

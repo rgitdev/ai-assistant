@@ -88,6 +88,11 @@ export class ImageFileRepository implements IImageRepository {
     return fs.readFileSync(imagePath);
   }
 
+  async getImageMetadata(imageId: string): Promise<ImageMetadata | null> {
+    const storage = await this.readMetadata();
+    return storage[imageId] || null;
+  }
+
   async getImagesByConversation(conversationId: string): Promise<ImageMetadata[]> {
     const storage = await this.readMetadata();
     return Object.values(storage).filter(

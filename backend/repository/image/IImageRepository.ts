@@ -26,6 +26,11 @@ export interface IImageRepository {
   getImage(imageId: string): Promise<Buffer | null>;
 
   /**
+   * Get image metadata by image ID
+   */
+  getImageMetadata(imageId: string): Promise<ImageMetadata | null>;
+
+  /**
    * Get all images for a conversation
    */
   getImagesByConversation(conversationId: string): Promise<ImageMetadata[]>;

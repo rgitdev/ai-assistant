@@ -109,6 +109,19 @@ export const UserMessage: React.FC<UserMessageProps> = ({ message, conversationI
           <div className="user-message__text">
             {message.content}
           </div>
+          {message.imageIds && message.imageIds.length > 0 && (
+            <div className="user-message__images">
+              {message.imageIds.map((imageId) => (
+                <img
+                  key={imageId}
+                  src={`/api/images/${imageId}`}
+                  alt="User uploaded image"
+                  className="user-message__image"
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
